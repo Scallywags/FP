@@ -24,5 +24,5 @@ total []		= 0
 total (x:xs)	= x + total xs
 
 mymap :: (a->b) -> [a] -> [b]
-mymap f []		= []
+mymap _ []		= []
 mymap f (x:xs)	= f x : mymap f xs
