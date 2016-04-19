@@ -45,11 +45,12 @@ root2 a b c = root (-) a b c
 
 --5
 
-extrX :: (Fractional a, Num a) => a -> a -> b -> a
-extrX a b _		= (-b) / (2*a)
+extrX :: (Fractional a, Num a) => a -> a -> a
+extrX a b	= (-b) / (2*a)
 
-extrY ::(Fractional a, Num a) => (a -> a -> a -> a -> a) -> a -> a -> a -> a
-extrY f a b c	= f (extrX a b c) a b c
+extrY ::(Fractional a, Num a) => a -> a -> a -> a
+extrY a b c	= a * x ^ 2 + b * x + c
+			where x = extrX a b
 
 --6
 
@@ -63,7 +64,7 @@ mysum (x:xs)	= x + mysum xs
 
 myreverse :: [a] -> [a]
 myreverse []		= []
-myreverse (x:xs)	= (myreverse xs) ++ [x]
+myreverse (x:xs)	= myreverse xs ++ [x]
 
 mytake :: Int -> [a] -> [a]
 mytake 0 _		= []
@@ -107,9 +108,7 @@ allEqual (x:x':xs)	= x == x' && allEqual (x':xs)
 allEqual _			= True
 
 isAS :: (Eq a, Num a) => [a] -> Bool
-isAS (x:x':xs)	= allEqual $ differences (x:x':xs)
-					where differences (y:y':ys)	= y' - y : differences (y':ys)
-isAS _			= True
+isAS xs	= allEqual $ zipWith (-) xs (tail xs)
 
 --9
 
