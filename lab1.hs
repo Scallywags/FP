@@ -82,7 +82,7 @@ myconcat (xs:xss)	= xs ++ myconcat xss
 mymaximum :: Ord a => [a] -> a
 mymaximum [x]		= x
 mymaximum (x:x':xs)	= mymaximum ((max x x'):xs)
-mymaximum _			= error "no maximum element in empty list"
+mymaximum []		= error "no maximum element in empty list"
 
 myzip :: [a] -> [b] -> [(a,b)]
 myzip xs []			= []
@@ -108,9 +108,7 @@ allEqual _			= True
 
 isAS :: (Eq a, Num a) => [a] -> Bool
 isAS (x:x':xs)	= allEqual $ differences (x:x':xs)
-					where
-						differences (y:y':ys)	= y' - y : differences (y':ys)
-						differences _			= []
+					where differences (y:y':ys)	= y' - y : differences (y':ys)
 isAS _			= True
 
 --9
