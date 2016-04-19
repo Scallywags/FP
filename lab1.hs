@@ -121,7 +121,6 @@ rowTotals :: Num a => Matrix a -> [a]
 rowTotals m = map mysum m
 
 transpose :: Matrix a -> Matrix a
-transpose []		= []
 transpose ([]:_)	= []
 transpose m			= (map head m) : transpose (map tail m)
 
