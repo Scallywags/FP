@@ -5,19 +5,19 @@ import Data.Char
 --1
 
 f :: Num a => a -> a
-f x = 2 * x ^ 2 + 3 * x - 5
+f x = 2 * x * x + 3 * x - 5
 
 --2
 
 code :: Char -> Char
 code x	| isUpper x	= chr ((ord x - 65 + 3) `mod` 26 + 65)
-		| otherwise	= chr ((ord x - 97 + 3) `mod` 26 + 97)
+		| isLower x	= chr ((ord x - 97 + 3) `mod` 26 + 97)
+		| otherwise	= x
 
 code' :: Char -> Int -> Char
-code' x n = chr ((ord x - offset + n) `mod` 26 + offset)
-			where
-				offset	| isUpper x	= 65
-						| otherwise	= 97
+code' x n	| isUpper x	= chr ((ord x - 65 + n) `mod` 26 + 65)
+			| isLower x	= chr ((ord x - 97 + n) `mod` 26 + 97)
+			| otherwise	= x
 
 --3
 
@@ -88,3 +88,44 @@ myzip :: [a] -> [b] -> [(a,b)]
 myzip xs []			= []
 myzip [] ys			= []
 myzip (x:xs) (y:ys)	= (x, y):myzip xs ys
+
+--7
+
+r :: Num a => a -> a -> [a]
+r x d = iterate (+d) x
+
+rl :: Num a => Int -> a -> a -> a
+rl n x d	= r x d !! n
+
+total :: Num a => Int -> Int -> [a] -> a
+total i j xs = mysum $ take (j-i+1) (drop i xs)
+
+--8
+
+allEqual :: Eq a => [a] -> Bool
+allEqual (x:x':xs)	= x == x' && allEqual (x':xs)
+allEqual _			= True
+
+isAS :: (Eq a, Num a) => [a] -> Bool
+isAS (x:x':xs)	= allEqual $ differences (x:x':xs)
+					where
+						differences (y:y':ys)	= y' - y : differences (y':ys)
+						differences _			= []
+isAS _			= True
+
+--9
+
+type Matrix a = [[a]]
+
+equalRowLengths :: Matrix a -> Bool
+equalRowLengths m = allEqual (map length m)
+
+rowTotals :: Num a => Matrix a -> [a]
+rowTotals m = map mysum m
+
+transpose :: Matrix a -> Matrix a
+transpose []	= []
+transpose m		= (map head m) : transpose (tail m)
+
+columnTotals :: Num a => Matrix a -> [a]
+columnTotals m = rowTotals $ transpose m
