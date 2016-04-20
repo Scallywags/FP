@@ -24,3 +24,25 @@ matrixAdd m1 m2	= zipWith vectorAdd m1 m2
 --(for every row, add it in front of the already transposed matrix)
 transp []		= repeat []
 transp (xs:xss)	= zipWith (:) xs (transpose xss)
+
+--function composition
+-- (f . g) x = f (g x)
+squaresSmallerThen n = takeWhile ((< n) . (^2)) [1..]
+
+--($) is the function application operation, but it binds weaker than the normal one.
+--f (g x)  is the same as  (f . g) x  is the same as  f $ g x
+
+--vector multipliciation (dot product)
+dotProduct xs ys	= foldl (+) 0 $ zipWith (*) xs ys
+
+--list comprehension (same can be achieved with map and filter)
+evens xs	= [x | x <- xs, even x]
+
+smallerXSthenYS xs ys = [(x, y) | x <- xs, y <- ys, x < y]
+
+--permutations
+perms []	= [[]]
+perms xs	= [x:p | x <- xs, p <- perms (xs \\ [x])]
+
+--lambda abstractions
+--f x = x^2     <==>    f = \x -> x^2
