@@ -20,7 +20,7 @@ vectorAdd v1 v2	= zipWith (+) v1 v2
 --adding two lists of lists together
 matrixAdd m1 m2	= zipWith vectorAdd m1 m2
 
---transpose top-down (indead of left-right)
+--transpose top-down (instead of left-right)
 --(for every row, add it in front of the already transposed matrix)
 transp []		= repeat []
 transp (xs:xss)	= zipWith (:) xs (transpose xss)
