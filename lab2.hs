@@ -181,11 +181,7 @@ ins x (y:ys)	| x < y 	= x:y:ys
 				| otherwise = y:ins x ys
 
 isort :: Ord a => [a] -> [a]
-isort []		= []
-isort (x:xs)	= ins x (isort xs)
---TODO how to do with a fold?
---isort xs		= foldl ins [] xs ???
-
+isort xs		= foldr ins [] xs
 
 merge :: Ord a => [a] -> [a] -> [a]
 merge xs []			= xs
