@@ -135,7 +135,7 @@ increasing :: Ord a => [a] -> Bool
 increasing xs = and $ zipWith (>) (tail xs) xs
 
 mean :: (Integral a) => [a] -> a
-mean xs = fromIntegral (sum xs) / fromIntegral (length xs)
+mean xs = fromIntegral (sum xs) `div` fromIntegral (length xs)
 
 weakIncr :: (Integral a) => [a] -> Bool
 weakIncr []		= True
@@ -155,3 +155,51 @@ partsublist (x:xs) (y:ys)	| x == y 	= partsublist xs ys
 
 --7
 
+bubble :: Ord a => [a] -> [a]
+bubble []			= []
+bubble [x]			= [x]
+bubble (x:x':xs)	| x < x' 	= x:bubble (x':xs)
+					| otherwise = x':bubble (x:xs)
+
+bsort :: Ord a => [a] -> [a]
+bsort xs	| xs == ys = xs
+			| otherwise = bsort ys
+				where ys = bubble xs
+
+mmsort :: Ord a => [a] -> [a]
+mmsort []	= []
+mmsort [x]	= [x]
+mmsort xs	= [smallest] ++ mmsort rest ++ [largest]
+				where
+					smallest = minimum xs
+					largest = maximum xs
+					rest = xs \\ [smallest, largest]
+
+ins :: Ord a => a -> [a] -> [a]
+ins x []		= [x]
+ins x (y:ys)	| x < y 	= x:y:ys
+				| otherwise = y:ins x ys
+
+isort :: Ord a => [a] -> [a]
+isort []		= []
+isort (x:xs)	= ins x (isort xs)
+--TODO how to do with a fold?
+--isort xs		= foldl ins [] xs ???
+
+
+merge :: Ord a => [a] -> [a] -> [a]
+merge xs []			= xs
+merge [] ys			= ys
+merge (x:xs) (y:ys) | x < y 	= x:merge xs (y:ys)
+					| otherwise	= y:merge (x:xs) ys
+
+msort :: Ord a => [a] -> [a]
+msort []	= []
+msort [x]	= [x]
+msort xs	= merge (msort left) (msort right)
+	where (left, right) = splitAt (length xs `div` 2) xs
+
+qsort :: Ord a => [a] -> [a]
+qsort []		= []
+qsort (x:xs)	= qsort smaller ++ [x] ++ qsort bigger
+	where (smaller, bigger) = partition (<x) xs
