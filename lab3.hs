@@ -110,18 +110,55 @@ cutOffAt n (Node1c x l r) 	= Node1c x (cutOffAt (n-1) l) (cutOffAt (n-1) r)
 type Path = String
 
 replace :: Path -> Int -> Tree1a -> Tree1a
-replace _ n (Leaf1a _)				= Leaf1a n
+replace [] n (Leaf1a _)				= Leaf1a n
+replace _ _ t@(Leaf1a _)			= t
 replace [] n (Node1a _ l r)			= Node1a n l r
 replace ('l':ds) n (Node1a x l r)	= Node1a x (replace ds n l) r
 replace ('r':ds) n (Node1a x l r)	= Node1a x l (replace ds n r)
 
 subTree :: Path -> Tree1a -> Tree1a
-subTree []	t 			= t
-subTree _	(Leaf1a _)	= error "Path too long!"
+subTree []	t 						= t
+subTree _	(Leaf1a _)				= error "Path too long!"
 subTree ('l':ds) (Node1a x l r)		= subTree ds l
 subTree ('r':ds) (Node1a x l r)		= subTree ds r
 
---TODO extra exercise
+-- extra
+
+leftmostLeafPath :: Tree1a -> Path
+leftmostLeafPath t@(Leaf1a _)		= ""
+leftmostLeafPath (Node1a _ l _)		= 'l':leftmostLeafPath l
+
+rightmostLeafPath :: Tree1a -> Path
+rightmostLeafPath t@(Leaf1a _)		= ""
+rightmostLeafPath (Node1a _ _ r)	= 'r':rightmostLeafPath r
+
+treeElem :: Tree1a -> Tree1a -> Bool
+treeElem (Leaf1a n) (Leaf1a x)		= n == x
+treeElem (Node1a _ _ _) (Leaf1a _)	= False
+treeElem tree t@(Node1a _ l r)		= tree == t || tree `treeElem` l || tree `treeElem` r
+
+calcPath :: Tree1a -> Tree1a -> Path
+calcPath leaf t@(Leaf1a _)			= "" -- we just assume we don't get here when the leaves are not the same.
+calcPath leaf t@(Node1a _ l r)		| leaf `treeElem` l 	= 'l':calcPath leaf l
+									| leaf `treeElem` r 	= 'r':calcPath leaf r
+									| leaf == t 			= ""
+									| otherwise = error (show t ++ " does not contain " ++ show leaf)
+
+leftNeighbour :: Tree1a -> Tree1a -> Path
+leftNeighbour leaf tree = leftNeighbour' leaf tree path
+	where
+		path = calcPath leaf tree
+		leftNeighbour' lf (Node1a _ l _) ('l':ds)	= 'l':leftNeighbour' lf l ds
+		leftNeighbour' _ (Node1a _ l _) ('r':_)		= 'l':rightmostLeafPath l
+		leftNeighbour' _ (Leaf1a _) _				= error (show leaf ++ " is the leftmost leaf in " ++ show tree)
+
+rightNeighbour :: Tree1a -> Tree1a -> Path
+rightNeighbour leaf tree = rightNeighbour' leaf tree path
+	where
+		path = calcPath leaf tree
+		rightNeighbour' lf (Node1a _ _ r) ('r':ds)	= 'r':rightNeighbour' lf r ds
+		rightNeighbour' _ (Node1a _ _ r) ('l':ds)	= 'r':leftmostLeafPath r
+		rightNeighbour' _ (Leaf1a _) _				= error (show leaf ++ " is the rightmost leaf in " ++ show tree)
 
 --8
 
@@ -140,3 +177,6 @@ makeBalancedTree xs			= Node1c top (makeBalancedTree left) (makeBalancedTree rig
 
 balance :: Tree1c -> Tree1c
 balance = makeBalancedTree . makeList
+
+checkBalanced :: Int -> Bool
+checkBalanced n = isBalanced (balance (makeTree [1..n])) && checkBalanced (n-1)
