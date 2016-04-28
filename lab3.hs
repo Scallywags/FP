@@ -179,4 +179,5 @@ balance :: Tree1c -> Tree1c
 balance = makeBalancedTree . makeList
 
 checkBalanced :: Int -> Bool
-checkBalanced n = isBalanced (balance (makeTree [1..n])) && checkBalanced (n-1)
+checkBalanced 2	= True
+checkBalanced n	= isBalanced (balance (makeTree [1..n])) && checkBalanced (n-1)
