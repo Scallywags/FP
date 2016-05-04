@@ -214,23 +214,22 @@ type ExprTree = BinTree Token Token
 
 parse4 :: String -> ExprTree
 parse4 input 	= tree
-	where (tree, tokens) = parse4' (tokenize input)
+	where (tree, tokens) = parse4' (filter (\(tt, tv) -> tt /= WhiteSpace) (tokenize input))
 
 --TODO
 
 parse4' :: [Token] -> (ExprTree, [Token])
-parse4'	[] 														= (BinLeaf (WhiteSpace, " "), [])
+parse4'	[] 														= (BinLeaf (WhiteSpace, "The End"), [])
 parse4' (leaf@(Number, _):ts)									= (BinLeaf leaf, ts)
 parse4' (leaf@(Identifier, _):ts)								= (BinLeaf leaf, ts)
-parse4' ((WhiteSpace, _):ts)									= parse4' ts
 parse4' ((BracketOpen, _):e1:op:e2:(BracketClose, _):ts)		= case ts of
-																	[] 								-> (BinNode op left right, ts)
-																	(opToken@(Operator, opStr):r0) 	-> ((BinNode opToken, subLeft, subRight), rest)
+																	[] 								-> (BinNode op (fst (parse4' [e1])) (fst (parse4' [e2])), ts)
+																	(opToken@(Operator, opStr):r0) 	-> ((BinNode opToken subLeft subRight), rest)
 																		where
 																			(left, _) = parse4' [e1]
 																			(right, _) = parse4' [e2]
-																			subLeft = BinNode op left right
 																			(subRight, rest) = (parse4' r0)
-
+																			subLeft = BinNode op left right
+																					
 --5
 
