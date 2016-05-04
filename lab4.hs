@@ -167,13 +167,15 @@ fsaSpaceSuccess S = True
 testFsaSpace :: [Char] -> Bool
 testFsaSpace cs = testFsa fsaSpace fsaSpaceSuccess cs
 
-type Token = String
+data TokenType = Number | Identifier | Operator | BracketOpen | BracketClose | WhiteSpace deriving (Show, Eq)
+type TokenValue = String
+type Token = (TokenType, TokenValue)
 type FSA = (State -> Char -> State, State -> Bool)
 
 isOpChar :: Char -> Bool
 isOpChar c = c `elem` "-+*/<>=&|."
 
-findToken :: String -> State  -> Token -> FSA -> Maybe (Token, String)
+findToken :: String -> State  -> TokenValue -> FSA -> Maybe (TokenValue, String)
 findToken _ Error _ _ 							= Nothing
 findToken "" state soFar (ffsa, success)		| success state 	= Just (soFar, "")
 												| otherwise			= Nothing
@@ -186,12 +188,49 @@ tokenize :: String -> [Token]
 tokenize "" 	= []
 tokenize (c:cs)	= case foundTokenMaybe of
 						Nothing -> tokenize cs
-						Just (token, rest) -> token:tokenize rest
+						Just (tokenVal, rest) -> (toToken tokenVal):tokenize rest
 	where
 		fsa | isDigit c || c == '~'		= (fsaNumb, fsaNumbSuccess)
 			| c == ' '					= (fsaSpace, fsaSpaceSuccess)
 			| isLetter c 				= (fsaIdf, fsaIdfSuccess)
-			| c == '('					= (fsaBrack, fsaBrackSuccess)
+			| c == '(' || c == ')'		= (fsaBrack, fsaBrackSuccess)
 			| isOpChar c 				= (fsaOp, fsaOpSucess)
-			| otherwise					= error ("found unparsable character: " ++ [c])
+			| otherwise					= error ("Found unparsable character: " ++ [c])
 		foundTokenMaybe = findToken (c:cs) S "" fsa
+
+toToken :: TokenValue -> Token
+toToken []			= (undefined, [])
+toToken val@(x:xs)	| isDigit x || x == '~'		= (Number, val)
+					| x == ' '					= (WhiteSpace, val)
+					| isLetter x 				= (Identifier, val)
+					| x == '('					= (BracketOpen, val)
+					| x == ')'					= (BracketClose, val)
+					| isOpChar x 				= (Operator, val)
+					| otherwise 				= error ("Invalid token value: " ++ val)
+
+--4
+
+type ExprTree = BinTree Token Token
+
+parse4 :: String -> ExprTree
+parse4 input 	= tree
+	where (tree, tokens) = parse4' (tokenize input)
+
+--TODO
+
+parse4' :: [Token] -> (ExprTree, [Token])
+parse4'	[] 														= (BinLeaf (WhiteSpace, " "), [])
+parse4' (leaf@(Number, _):ts)									= (BinLeaf leaf, ts)
+parse4' (leaf@(Identifier, _):ts)								= (BinLeaf leaf, ts)
+parse4' ((WhiteSpace, _):ts)									= parse4' ts
+parse4' ((BracketOpen, _):e1:op:e2:(BracketClose, _):ts)		= case ts of
+																	[] 								-> (BinNode op left right, ts)
+																	(opToken@(Operator, opStr):r0) 	-> ((BinNode opToken, subLeft, subRight), rest)
+																		where
+																			(left, _) = parse4' [e1]
+																			(right, _) = parse4' [e2]
+																			subLeft = BinNode op left right
+																			(subRight, rest) = (parse4' r0)
+
+--5
+
