@@ -232,4 +232,19 @@ parse4' ((BracketOpen, _):e1:op:e2:(BracketClose, _):ts)		= case ts of
 																			subLeft = BinNode op left right
 																					
 --5
+type Table = [(String, Float)]
+eval :: ExprTree -> Table -> Float
+eval (BinLeaf (t, v)) l			| t == Number		= read v
+								| t == Identifier	= tablelookup l v
+eval (BinNode (_, o) t1 t2) l						= op (eval t1 l) (eval t2 l)
+								where op = case o of
+									"+"	-> (+)
+									"-"	-> (-)
+									"*"	-> (*)
+									"/"	-> (/)
+									_	-> error "Error: Unknown operator"
 
+tablelookup :: Table -> String -> Float
+tablelookup [] v						= error "Error: Unknown variable"
+tablelookup ((a,b):ls) v	| a == v	= b
+							| otherwise = tablelookup ls v
