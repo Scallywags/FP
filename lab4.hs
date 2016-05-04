@@ -82,7 +82,7 @@ parse2b L (c:r0)			= (BinLeaf (Right c), r0)
 
 --3
 
-data State = S | Q0 | Q1 | Q2 | Q3 | Q4 | Q5 | Q6 | Q7 | Q8 | Q9 | Q10 | Q11 | Q12 | Q13 | Q14 | Q15 | Q16 | Q17 | Q18 | Q19 deriving (Show, Eq)
+data State = S | Q0 | Q1 | Q2 | Q3 | Q4 | Q5 | Q6 | Q7 | Q8 | Q9 | Q10 | Q11 | Q12 | Q13 | Q14 | Q15 | Q16 | Q17 | Q18 | Q19 | Error deriving (Show, Eq)
 
 testFsa :: (State -> Char -> State) -> (State -> Bool) -> String -> Bool
 testFsa fsa success cs = success (foldl fsa S cs)
@@ -97,6 +97,7 @@ fsaNumb Q1 c 	| isDigit c 	= Q1
 				| c == '.'		= Q2
 fsaNumb Q2 c 	| isDigit c 	= Q3
 fsaNumb Q3 c 	| isDigit c 	= Q3
+fsaNumb _ _		= Error
 
 fsaNumbSuccess :: State -> Bool
 fsaNumbSuccess s 	= s == Q3 || s == Q1
@@ -108,6 +109,7 @@ fsaIdf :: State -> Char -> State
 fsaIdf S c 	| isLetter c 	= Q0
 fsaIdf Q0 c | isLetter c 	= Q0
 			| isDigit c 	= Q0
+fsaIdf _ _	= Error
 
 fsaIdfSuccess :: State -> Bool
 fsaIdfSuccess s = s == Q0
@@ -126,6 +128,7 @@ fsaOp S '<' = Q11
 fsaOp S '>' = Q9
 fsaOp S '&' = Q13
 fsaOp S '|' = Q14
+fsaOp S '.' = Q18
 
 fsaOp Q0 '-' = Q1
 fsaOp Q2 '+' = Q3
@@ -135,16 +138,18 @@ fsaOp Q9 '=' = Q10
 fsaOp Q11 '=' = Q12
 fsaOp Q13 '&' = Q15
 fsaOp Q14 '|' = Q16
+fsaOp _ _ 	= Error
 
 fsaOpSucess :: State -> Bool
-fsaOpSucess s = s /= S && s /= Q13 && s /= Q14 && s /= Q7
+fsaOpSucess s = s /= S && s /= Q13 && s /= Q14 && s /= Q7 && s /= Error
 
 testFsaOp :: [Char] -> Bool
 testFsaOp cs = testFsa fsaOp fsaOpSucess cs
 
 fsaBrack :: State -> Char -> State
-fsaBrack S '(' = Q0
-fsaBrack S ')' = Q0
+fsaBrack S '(' 	= Q0
+fsaBrack S ')' 	= Q0
+fsaBrack _ _ 	= Error
 
 fsaBrackSuccess :: State -> Bool
 fsaBrackSuccess s = s == Q0
@@ -154,6 +159,7 @@ testFsaBrack cs = testFsa fsaBrack fsaBrackSuccess cs
 
 fsaSpace :: State -> Char -> State
 fsaSpace S ' '	= S
+fsaSpace _ _ 	= Error
 
 fsaSpaceSuccess :: State -> Bool
 fsaSpaceSuccess S = True
@@ -161,11 +167,31 @@ fsaSpaceSuccess S = True
 testFsaSpace :: [Char] -> Bool
 testFsaSpace cs = testFsa fsaSpace fsaSpaceSuccess cs
 
-
-{-
 type Token = String
+type FSA = (State -> Char -> State, State -> Bool)
+
+isOpChar :: Char -> Bool
+isOpChar c = c `elem` "-+*/<>=&|."
+
+findToken :: String -> State  -> Token -> FSA -> Maybe (Token, String)
+findToken _ Error _ _ 							= Nothing
+findToken "" state soFar (ffsa, success)		| success state 	= Just (soFar, "")
+												| otherwise			= Nothing
+findToken (x:xs) state soFar (ffsa, success) 	| success state && maybeNext == Nothing	= Just (soFar, (x:xs))
+												| otherwise								= maybeNext
+	where
+		maybeNext = findToken xs (ffsa state x) (soFar ++ [x]) (ffsa, success)
 
 tokenize :: String -> [Token]
-tokenize [] 	= []
-tokenize (c:cs)	= 
--}
+tokenize "" 	= []
+tokenize (c:cs)	= case foundTokenMaybe of
+						Nothing -> tokenize cs
+						Just (token, rest) -> token:tokenize rest
+	where
+		fsa | isDigit c || c == '~'		= (fsaNumb, fsaNumbSuccess)
+			| c == ' '					= (fsaSpace, fsaSpaceSuccess)
+			| isLetter c 				= (fsaIdf, fsaIdfSuccess)
+			| c == '('					= (fsaBrack, fsaBrackSuccess)
+			| isOpChar c 				= (fsaOp, fsaOpSucess)
+			| otherwise					= error ("found unparsable character: " ++ [c])
+		foundTokenMaybe = findToken (c:cs) S "" fsa
