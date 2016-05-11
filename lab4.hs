@@ -231,19 +231,20 @@ parse4' ((BracketOpen, _):e1:op:e2:(BracketClose, _):ts)		= case ts of
 																					
 --5
 
-valueOfOp :: Token -> (Float -> Float -> Float)
-valueOfOp (Operator, "*")	= (*)
-valueOfOp (Operator, "/")	= (/)
-valueOfOp (Operator, "+")	= (+)
-valueOfOp (Operator, "-")	= (-)
-valueOfOp (Operator, "^")	= (**)
+valueOfOp :: TokenValue -> (Float -> Float -> Float)
+valueOfOp "*"	= (*)
+valueOfOp "/"	= (/)
+valueOfOp "+"	= (+)
+valueOfOp "-"	= (-)
+valueOfOp "^"	= (**)
 
 valueOf :: TokenValue -> Float
 valueOf "a"	= 5
 valueOf "b"	= -2
 valueOf "c"	= 100
+valueOf "YOLO" = 1337
 
-valueOfFloat :: String -> Float
+valueOfFloat :: TokenValue -> Float
 valueOfFloat ('~':xs)	= (-1) * (read xs)
 valueOfFloat xs			= read xs
 
@@ -253,4 +254,4 @@ eval input = eval' (parse4 input)
 eval' :: ExprTree -> Float
 eval' (BinLeaf (Number, numString))	 	= valueOfFloat numString
 eval' (BinLeaf (Identifier, idfString))	= valueOf idfString
-eval' (BinNode op e1 e2)				= (valueOfOp op) (eval' e1) (eval' e2)
+eval' (BinNode (Operator, op) e1 e2)	= (valueOfOp op) (eval' e1) (eval' e2)
