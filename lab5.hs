@@ -1,5 +1,6 @@
 module Lab5 where
 
+import Data.List
 import FPPrac.Trees
 
 type Stack  = [Int]
@@ -48,6 +49,7 @@ data Stmnt  = Assign Variable Expr
 
 codeGen5 :: Stmnt -> [Instr]
 codeGen5 (Assign addr e)	= codeGen2' e ++ [Store addr]
+codeGen5 (Repeat e stmnts)	= [PushPC, PushConst (length stmnts)] ++ (concatMap codeGen5 stmnts) ++ [EndRep]
 
 --6
 
@@ -67,7 +69,8 @@ instance RT Expr where
 	ppTree = ppExpr
 
 instance RT Stmnt where
-	ppTree (Assign addr e)  = RoseNode ("Assign") [RoseNode (show addr) [], ppTree e]
+	ppTree (Assign addr e)  	= RoseNode "Assign" [RoseNode (show addr) [], ppTree e]
+	ppTree (Repeat e stmnts)	= RoseNode "Repeat" (ppTree e : map ppTree stmnts)
 
 --7
 

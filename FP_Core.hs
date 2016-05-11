@@ -38,7 +38,13 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
 
         PushPC  ->  (pc+1, sp+1, heap, stack <~ (sp, pc))
 
-        --EndRep  ->  (newPc, ) TODO (think of while loop)
+        EndRep  ->  (newPc, newSp, heap, stack <~ (sp, v))
+                  where
+                    v = (stack!!sp) -1
+                    newPc | v == 0    = stack!!(sp-1)
+                          | otherwise = pc+1
+                    newSp | v == 0    = sp-2  --'removes' the counter variable and pc from the stack
+                          | otherwise = sp
 
         Calc op  -> (pc+1, sp-1 , heap, stack <~ (sp-2,v))
                  where
