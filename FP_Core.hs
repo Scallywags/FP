@@ -40,11 +40,11 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
 
         EndRep  ->  (newPc, newSp, heap, stack <~ (sp, v))
                   where
-                    v = (stack!!sp) - 1                 --counter variable is on top of the stack
+                    v = (stack!!sp) - 1                 --counter variable is on top of the stack. IS IT???
                     newPc | v == 0    = pc + 1          --break out of the loop
                           | otherwise = stack!!(sp-1)   --olc pc value was stored on the stack, before the counter variable
                     newSp | v == 0    = sp-2            --'removes' the counter variable and pc from the stack
-                          | otherwise = sp+1            --dont overwrite the coounter variable, put anything after it.
+                          | otherwise = sp+1            --dont overwrite the counter variable, put anything after it.
 
         Calc op  -> (pc+1, sp-1 , heap, stack <~ (sp-2,v))
                  where
