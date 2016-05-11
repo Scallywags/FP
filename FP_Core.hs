@@ -41,10 +41,10 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
         EndRep  ->  (newPc, newSp, heap, stack <~ (sp, v))
                   where
                     v = (stack!!sp) -1
-                    newPc | v == 0    = stack!!(sp-1)
-                          | otherwise = pc+1
-                    newSp | v == 0    = sp-2  --'removes' the counter variable and pc from the stack
-                          | otherwise = sp
+                    newPc | v == 0    = pc + 1          --break out of the loop
+                          | otherwise = stack!!(sp-1)   --olc pc value was stored on the stack, before the counter variable
+                    newSp | v == 0    = sp-2            --'removes' the counter variable and pc from the stack
+                          | otherwise = sp+1            --dont overwrite the coounter variable, put anything after it.
 
         Calc op  -> (pc+1, sp-1 , heap, stack <~ (sp-2,v))
                  where

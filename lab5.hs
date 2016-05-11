@@ -49,7 +49,7 @@ data Stmnt  = Assign Variable Expr
 
 codeGen5 :: Stmnt -> [Instr]
 codeGen5 (Assign addr e)	= codeGen2' e ++ [Store addr]
-codeGen5 (Repeat e stmnts)	= [PushPC, PushConst (length stmnts)] ++ (concatMap codeGen5 stmnts) ++ [EndRep]
+codeGen5 (Repeat e stmnts)	= [PushPC, PushConst (length stmnts)] ++ concatMap codeGen5 stmnts ++ [EndRep]
 
 --6
 
