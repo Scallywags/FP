@@ -34,7 +34,7 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
                  where v = heap!!addr
 
         Store addr        -> (pc+1, sp-1, heap <~ (addr, v), stack)
-                 where v = stack!!sp
+                 where v = stack!!(sp-1)
 
         PushPC  ->  (pc+1, sp+1, heap, stack <~ (sp, pc))
 
@@ -44,7 +44,7 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
                     newPc | v == 0    = pc + 1          --break out of the loop
                           | otherwise = stack!!(sp-1)   --olc pc value was stored on the stack, on top of the the counter variable
                     newSp | v == 0    = sp-2            --'removes' the counter variable and pc from the stack
-                          | otherwise = sp             
+                          | otherwise = sp-1             
 
         Calc op  -> (pc+1, sp-1 , heap, stack <~ (sp-2,v))
                  where

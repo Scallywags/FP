@@ -74,5 +74,3 @@ instance RT Stmnt where
 	ppTree (Assign addr e)  	= RoseNode "Assign" [RoseNode (show addr) [], ppTree e]
 	ppTree (Repeat e stmnts)	= RoseNode "Repeat" (ppTree e : map ppTree stmnts)
 
---7
-
