@@ -12,7 +12,6 @@ data Op     = Add | Mul | Sub
 data Instr  = PushConst Int
             | PushAddr Int
             | Store Int
-            | Load Int
             | PushPC
             | EndRep
             | Calc Op
@@ -22,6 +21,7 @@ data Instr  = PushConst Int
 data Tick = Tick deriving (Show, Eq)
 
 data Expr = Const Int                   -- for constants
+          | Var Variable                -- for variables. Variable is the address.
           | BinExpr Op Expr Expr        -- for ``binary expressions''
           deriving (Show, Eq)
 
@@ -32,12 +32,14 @@ codeGen2 e 	= codeGen2' e ++ [EndProg]
 
 codeGen2' :: Expr -> [Instr]
 codeGen2' (Const x)				= [PushConst x]
+codeGen2' (Var addr)            = [PushAddr addr]
 codeGen2' (BinExpr op e1 e2)	= codeGen2' e2 ++ codeGen2' e1 ++ [Calc op]
 
 --3
 
 ppExpr :: Expr -> RoseTree
 ppExpr (Const x)          = RoseNode (show x) []
+ppExpr (Var addr)         = RoseNode ("addr: " ++ show addr) []
 ppExpr (BinExpr op e1 e2) = RoseNode (show op) [ppExpr e1, ppExpr e2]
 
 --5
@@ -49,7 +51,7 @@ data Stmnt  = Assign Variable Expr
 
 codeGen5 :: Stmnt -> [Instr]
 codeGen5 (Assign addr e)	= codeGen2' e ++ [Store addr]
-codeGen5 (Repeat e stmnts)	= [PushPC, PushConst (codeGen2' e)] ++ concatMap codeGen5 stmnts ++ [EndRep]
+codeGen5 (Repeat e stmnts)	= codeGen2' e ++ [PushPC] ++ concatMap codeGen5 stmnts ++ [EndRep]
 
 --6
 

@@ -38,13 +38,13 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
 
         PushPC  ->  (pc+1, sp+1, heap, stack <~ (sp, pc))
 
-        EndRep  ->  (newPc, newSp, heap, stack <~ (sp, v))
+        EndRep  ->  (newPc, newSp, heap, stack <~ (sp-2, v-1))
                   where
-                    v = (stack!!sp) - 1                 --counter variable is on top of the stack. IS IT???
+                    v = stack!!(sp-2)                   --read counter variable
                     newPc | v == 0    = pc + 1          --break out of the loop
-                          | otherwise = stack!!(sp-1)   --olc pc value was stored on the stack, before the counter variable
+                          | otherwise = stack!!(sp-1)   --olc pc value was stored on the stack, on top of the the counter variable
                     newSp | v == 0    = sp-2            --'removes' the counter variable and pc from the stack
-                          | otherwise = sp+1            --dont overwrite the counter variable, put anything after it.
+                          | otherwise = sp             
 
         Calc op  -> (pc+1, sp-1 , heap, stack <~ (sp-2,v))
                  where
@@ -90,8 +90,8 @@ prog = [ PushConst 2
 -- Testing
 clock      = repeat Tick
 emptyStack = replicate 8 0
-emptyHeap  = repeat 0
-test       = putStr
+emptyHeap  = replicate 8 0
+test prog  = putStr
            $ unlines
            $ map show
            $ takeWhile (\(pc,_,_, _) -> pc /= -1)
