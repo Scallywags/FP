@@ -13,11 +13,10 @@ myGrammar nt = case nt of
 
         Expr    -> [[ Nmbr                                         ]
                    ,[ Var                                          ]
-                   ,[ lBracket, Expr, rBracket                     ]
-                   ,[ Expr, Op, Expr                               ]]
+                   ,[ lBracket, Expr, Op, Expr, rBracket           ]]
                    
         Stmnt   -> [[ Var, Terminal "=", Expr                      ]       -- Typecheck on op?
-                   ,[ Terminal "repeat", Rep0 [Stmnt], Expr        ]]
+                   ,[ Terminal repeat, Rep0 [Stmnt], Expr        ]]
                    
         Var     -> [[var]]
         
@@ -27,9 +26,12 @@ myGrammar nt = case nt of
         
         Bracket -> [[bracket]]
         
-        
+repeat      = "repeat"
 var         = SyntCat Var
 boolean     = SyntCat Boolean
 resWord     = SyntCat ResWord
 bracket     = SyntCat Bracket
-             
+
+
+data ExprTree = ExprLeaf Num
+              | ExprNode ExprTree Op ExprTree
