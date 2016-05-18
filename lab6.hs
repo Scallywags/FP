@@ -11,11 +11,25 @@ myGrammar nt = case nt of
 
         Op      -> [[ op                                           ]]
 
-        Expr    -> [[ Expr, Op, Expr                               ]
-                   ,[ Nmbr                                         ]
+        Expr    -> [[ Nmbr                                         ]
                    ,[ Var                                          ]
-                   ,[ lBracket, Expr, rBracket                     ]]
+                   ,[ lBracket, Expr, rBracket                     ]
+                   ,[ Expr, Op, Expr                               ]]
                    
         Stmnt   -> [[ Var, Terminal "=", Expr                      ]       -- Typecheck on op?
                    ,[ Terminal "repeat", Rep0 [Stmnt], Expr        ]]
+                   
+        Var     -> [[var]]
+        
+        Boolean -> [[boolean]]
+        
+        ResWord -> [[resWord]]
+        
+        Bracket -> [[bracket]]
+        
+        
+var         = SyntCat Var
+boolean     = SyntCat Boolean
+resWord     = SyntCat ResWord
+bracket     = SyntCat Bracket
              
