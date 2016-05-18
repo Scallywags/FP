@@ -67,7 +67,7 @@ fsaOp Q14 '|' = Q16
 fsaOp _ _ 	= Error
 
 fsaOpSucess :: State -> Bool
-fsaOpSucess s = s /= S && s /= Q7 && s /= Error
+fsaOpSucess s = s /= S && s /= Error
 
 testFsaOp :: [Char] -> Bool
 testFsaOp cs = testFsa fsaOp fsaOpSucess cs
