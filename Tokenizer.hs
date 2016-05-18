@@ -2,7 +2,10 @@ module Tokenizer where
 
 import Data.Char
 
+import FPPrac.Trees
 import FP_TypesEtc
+import FP_ParserGen
+import Lab6
 
 -- ====================== STATES =========================
 
@@ -137,7 +140,10 @@ toToken ")"			= (Bracket, ")")
 toToken (c:cs)		| c `elem` "-+*/<>=&|"								= (Op, (c:cs))
 toToken cs 			| isKeyWord cs 										= (ResWord, cs)
 toToken (c:cs)		| c == ' ' || c == '\t' || c == '\r' || c == '\n'	= (FP_TypesEtc.Space, (c:cs))
-toToken (c:cs)		| isLetter c 										=	(Var, (c:cs))
+toToken (c:cs)		| isLetter c 										= (Var, (c:cs))
 toToken (c:cs)		| isDigit c || c == '~' || c == '.'					= (Nmbr, (c:cs))
 
 toToken	_			= error "Irrecognizable string!"
+
+
+testPrint = prpr (parse myGrammar Expr (tokenize "a+b-4"))
