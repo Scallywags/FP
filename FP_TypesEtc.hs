@@ -26,9 +26,13 @@ data Alphabet = Terminal String               -- Terminal symbol: WILL be includ
 
               | Expr                          -- Expression
               | Nmbr                          -- Number
+              | Boolean                       -- Boolean
               | Op                            -- Operation symbol
               | Space                         -- Spaces
               | Bracket                       -- Brackets
+              | Var                           -- Variables
+              | Stmnt                         -- Statements
+              | ResWord                       -- Reserved keywords
               deriving (Eq,Ord,Show,Generic,ToRoseTree)
 
 -- ===================================================================
