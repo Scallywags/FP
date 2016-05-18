@@ -17,4 +17,11 @@ myGrammar nt = case nt of
                    ,[ lBracket, Expr, rBracket                     ]]
                    
         Stmnt   -> [[ Var, Terminal "=", Expr                      ]       -- Typecheck on op?
-                   ,[ Terminal "Repeat", Rep0 [Stmnt], Expr        ]]
+                   ,[ Terminal "repeat", Rep0 [Stmnt], Expr        ]]
+                   
+isKeyWord :: String -> Bool
+isKeyWord s = case s of
+        "repeat"    -> True
+        "true"      -> True
+        "false"     -> True
+        _           -> False
