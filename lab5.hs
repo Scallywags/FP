@@ -31,9 +31,9 @@ codeGen2 :: Expr -> [Instr]
 codeGen2 e 	= codeGen2' e ++ [EndProg]
 
 codeGen2' :: Expr -> [Instr]
-codeGen2' (Const x)				= [PushConst x]
-codeGen2' (Var addr)            = [PushAddr addr]
-codeGen2' (BinExpr op e1 e2)	= codeGen2' e2 ++ codeGen2' e1 ++ [Calc op]
+codeGen2' (Const x)				     = [PushConst x]
+codeGen2' (Var addr)           = [PushAddr addr]
+codeGen2' (BinExpr op e1 e2)	 = codeGen2' e2 ++ codeGen2' e1 ++ [Calc op]
 
 --3
 
@@ -73,4 +73,5 @@ instance RT Expr where
 instance RT Stmnt where
 	ppTree (Assign addr e)  	= RoseNode "Assign" [RoseNode (show addr) [], ppTree e]
 	ppTree (Repeat e stmnts)	= RoseNode "Repeat" (ppTree e : map ppTree stmnts)
+
 
