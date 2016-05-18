@@ -34,6 +34,13 @@ data Alphabet = Terminal String               -- Terminal symbol: WILL be includ
               | Stmnt                         -- Statements
               | ResWord                       -- Reserved keywords
               deriving (Eq,Ord,Show,Generic,ToRoseTree)
+                    
+isKeyWord :: String -> Bool
+isKeyWord s = case s of
+        "repeat"    -> True
+        "true"      -> True
+        "false"     -> True
+        _           -> False
 
 -- ===================================================================
 -- Symbolic notation for EBNF constructors
