@@ -13,8 +13,7 @@ myGrammar nt = case nt of
 
         Expr    -> [[ Nmbr                                         ]
                    ,[ Var                                          ]
-                   ,[ lBracket, Expr, rBracket                     ]
-                   ,[ Expr, Op, Expr                               ]]
+                   ,[ lBracket, Expr, Op, Expr, rBracket           ]]
                    
         Stmnt   -> [[ Var, Terminal "=", Expr                      ]       -- Typecheck on op?
                    ,[ Terminal "repeat", Rep0 [Stmnt], Expr        ]]
