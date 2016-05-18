@@ -134,10 +134,10 @@ toToken f@"false"	= (Boolean, f)
 toToken "("			= (Bracket, "(")
 toToken ")"			= (Bracket, ")")
 
-toToken cs 			| isKeyWord cs = (ResWord, cs)
-
+toToken (c:cs)		| c `elem` "-+*/<>=&|"								= (Op, (c:cs))
+toToken cs 			| isKeyWord cs 										= (ResWord, cs)
 toToken (c:cs)		| c == ' ' || c == '\t' || c == '\r' || c == '\n'	= (FP_TypesEtc.Space, (c:cs))
-toToken (c:cs)		| isLetter c 	=	(Var, (c:cs))
-toToken (c:cs)		| isDigit c || c == '~' || c == '.'	= (Nmbr, (c:cs))
+toToken (c:cs)		| isLetter c 										=	(Var, (c:cs))
+toToken (c:cs)		| isDigit c || c == '~' || c == '.'					= (Nmbr, (c:cs))
 
 toToken	_			= error "Irrecognizable string!"
