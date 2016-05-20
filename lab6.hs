@@ -20,8 +20,8 @@ myGrammar nt = case nt of
                    ,[ ifE, Expr, thenE, Expr, elseE, Expr           ]
                    ,[ lBracket, Expr, Op, Expr, rBracket            ]]
                    
-        Stmnt   -> [[ Var, assign, Expr                      ]       -- Typecheck on op?
-                   ,[ rep, Expr, lBrace, Rep0 [Stmnt, semi], rBrace       ]]
+        Stmnt   -> [[ Var, assign, Expr                             ]
+                   ,[ rep, Expr, lBrace, Rep0 [Stmnt, semi], rBrace ]]
                    
         Var     -> [[var]]
         
