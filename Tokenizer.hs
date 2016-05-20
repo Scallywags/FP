@@ -146,7 +146,7 @@ scan (c:cs)	= case foundTokenMaybe of
 
 tokenize :: String -> [Token]
 tokenize s = zip3 types values [0..]
-				where (types, values)	= unzip (map toToken (scan s))
+				where (types, values)	= unzip (filter (\(t, v) -> t /= FP_TypesEtc.Space) (map toToken (scan s)))
 
 toToken :: String -> (Alphabet, String)
 toToken t@"true"	= (Boolean, t)
