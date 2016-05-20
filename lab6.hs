@@ -19,8 +19,8 @@ myGrammar nt = case nt of
                    ,[ Var                                          ]
                    ,[ lBracket, Expr, Op, Expr, rBracket           ]]
                    
-        Stmnt   -> [[ Var, Terminal "=", Expr                      ]       -- Typecheck on op?
-                   ,[ Terminal "repeat", Rep0 [Stmnt], Expr        ]]
+        Stmnt   -> [[ Var, assign, Expr                      ]       -- Typecheck on op?
+                   ,[ rep, lBrace, Rep0 [Stmnt, semi], rBrace, Expr        ]]
                    
         Var     -> [[var]]
         
@@ -34,7 +34,11 @@ var         = SyntCat Var
 boolean     = SyntCat Boolean
 resWord     = SyntCat ResWord
 bracket     = SyntCat Bracket
-
+rep         = Terminal "repeat"
+lBrace      = Terminal "{"
+rBrace      = Terminal "}"
+semi        = Terminal ";"
+assign      = Terminal "="
 
 data GrammarTree   = ExprNum String
                    | ExprVar String
