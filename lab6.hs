@@ -17,6 +17,7 @@ myGrammar nt = case nt of
 
         Expr    -> [[ Nmbr                                          ]
                    ,[ Var                                           ]
+                   ,[ ifE, Expr, thenE, Expr, elseE, Expr           ]
                    ,[ lBracket, Expr, Op, Expr, rBracket            ]]
                    
         Stmnt   -> [[ Var, assign, Expr                             ]
@@ -42,6 +43,9 @@ lBrace      = Terminal "{"
 rBrace      = Terminal "}"
 semi        = Terminal ";"
 assign      = Terminal "="
+ifE         = Terminal "if"
+thenE       = Terminal "then"
+elseE       = Terminal "else"
 
 data GrammarTree   = ExprNum String
                    | ExprVar String
