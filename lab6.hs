@@ -30,10 +30,13 @@ myGrammar nt = case nt of
         
         Bracket -> [[bracket]]
         
+        Brace   ->  [[brace]]
+        
 var         = SyntCat Var
 boolean     = SyntCat Boolean
 resWord     = SyntCat ResWord
 bracket     = SyntCat Bracket
+brace       = SyntCat Brace
 rep         = Terminal "repeat"
 lBrace      = Terminal "{"
 rBrace      = Terminal "}"
