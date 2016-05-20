@@ -11,16 +11,16 @@ import FP_TypesEtc
 myGrammar :: Grammar
 myGrammar nt = case nt of
 
-        Nmbr    -> [[ nmbr                                         ]]
+        Nmbr    -> [[ nmbr                                          ]]
 
-        Op      -> [[ op                                           ]]
+        Op      -> [[ op                                            ]]
 
-        Expr    -> [[ Nmbr                                         ]
-                   ,[ Var                                          ]
-                   ,[ lBracket, Expr, Op, Expr, rBracket           ]]
+        Expr    -> [[ Nmbr                                          ]
+                   ,[ Var                                           ]
+                   ,[ lBracket, Expr, Op, Expr, rBracket            ]]
                    
-        Stmnt   -> [[ Var, assign, Expr                      ]       -- Typecheck on op?
-                   ,[ rep, lBrace, Rep0 [Stmnt, semi], rBrace, Expr        ]]
+        Stmnt   -> [[ Var, assign, Expr                             ]
+                   ,[ rep, Expr, lBrace, Rep0 [Stmnt, semi], rBrace ]]
                    
         Var     -> [[var]]
         
@@ -30,7 +30,7 @@ myGrammar nt = case nt of
         
         Bracket -> [[bracket]]
         
-        Brace   ->  [[brace]]
+        Brace   -> [[brace]]
         
 var         = SyntCat Var
 boolean     = SyntCat Boolean
