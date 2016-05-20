@@ -42,6 +42,9 @@ isKeyWord s = case s of
         "repeat"    -> True
         "true"      -> True
         "false"     -> True
+        "if"        -> True
+        "then"      -> True
+        "else"      -> True
         _           -> False
 
 -- ===================================================================
