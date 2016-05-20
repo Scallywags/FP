@@ -80,6 +80,21 @@ fsaBrack _ _ 	= Error
 fsaBrackSuccess :: State -> Bool
 fsaBrackSuccess s = s == Q0
 
+fsaBrace :: State -> Char -> State
+fsaBrace S '{' 	= Q0
+fsaBrace S '}' 	= Q0
+fsaBrace _ _ 	= Error
+
+fsaBraceSuccess :: State -> Bool
+fsaBraceSuccess s = s == Q0
+
+fsaSemi :: State -> Char -> State
+fsaSemi S ';' 	= Q0
+fsaSemi _ _		= Error
+
+fsaSemiSuccess :: State -> Bool
+fsaSemiSuccess s = s == Q0
+
 testFsaBrack :: [Char] -> Bool
 testFsaBrack cs = testFsa fsaBrack fsaBrackSuccess cs
 
@@ -123,6 +138,8 @@ scan (c:cs)	= case foundTokenMaybe of
 			| isLetter c 						= (fsaIdf, fsaIdfSuccess)
 			| c == '(' || c == ')'				= (fsaBrack, fsaBrackSuccess)
 			| c `elem` "-+*/<>=&|"				= (fsaOp, fsaOpSucess)
+			| c == ';'							= (fsaSemi, fsaSemiSuccess)
+			| c == '{' || c == '}'				= (fsaBrace, fsaBraceSuccess)
 			| otherwise							= error ("Found unparsable character: " ++ [c])
 		foundTokenMaybe = findToken (c:cs) S "" fsa
 
@@ -136,12 +153,16 @@ toToken t@"true"	= (Boolean, t)
 toToken f@"false"	= (Boolean, f)
 toToken "("			= (Bracket, "(")
 toToken ")"			= (Bracket, ")")
+toToken "{"			= (Brace, "{")
+toToken "}"			= (Brace, "}")
+toToken ";"			= (Semi, ";")
 
 toToken (c:cs)		| c `elem` "-+*/<>=&|"								= (Op, (c:cs))
 toToken cs 			| isKeyWord cs 										= (ResWord, cs)
 toToken (c:cs)		| c == ' ' || c == '\t' || c == '\r' || c == '\n'	= (FP_TypesEtc.Space, (c:cs))
 toToken (c:cs)		| isLetter c 										= (Var, (c:cs))
 toToken (c:cs)		| isDigit c || c == '~' || c == '.'					= (Nmbr, (c:cs))
+
 
 toToken	_			= error "Irrecognizable string!"
 

@@ -33,6 +33,8 @@ data Alphabet = Terminal String               -- Terminal symbol: WILL be includ
               | Var                           -- Variables
               | Stmnt                         -- Statements
               | ResWord                       -- Reserved keywords
+              | Brace                         -- Curly braces
+              | Semi                          -- Semicolon
               deriving (Eq,Ord,Show,Generic,ToRoseTree)
                     
 isKeyWord :: String -> Bool
