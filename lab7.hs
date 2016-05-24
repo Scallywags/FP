@@ -50,7 +50,7 @@ typeOf es (BinOp op e1 e2) 				= case maybeType of
 		type2 = typeOf es e2
 		maybeType = find (\(s, FunType t1 (FunType t2 tresult)) -> s == op && t1 == type1 && t2 == type2) es
 typeOf es (App e1 e2)					| type2 == tArg		= tRes
-										| otherwise			= error (show e2 ++ " heeft type " ++ (show type2) ++ ", maar " ++ (show e1) ++ " heef type " ++ (show $ typeOf es e1))
+										| otherwise			= error (show e2 ++ " heeft type " ++ (show type2) ++ ", maar " ++ (show e1) ++ " heeft type " ++ (show $ typeOf es e1))
 	where
 		FunType tArg tRes 	= typeOf es e1
 		type2 				= typeOf es e2
