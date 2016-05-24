@@ -21,8 +21,10 @@ myGrammar nt = case nt of
                    ,[ lBracket, Expr, Op, Expr, rBracket            ]]
                    
         Stmnt   -> [[ Var, assign, Expr                             ]
-                   ,[ rep, Expr, lBrace, Rep0 [Stmnt, semi], rBrace ]]
+                   ,[ rep, Expr, Block                              ]]
                    
+        Block   -> [[lBrace, Rep0 [Stmnt, semi], rBrace]]
+
         Var     -> [[var]]
         
         Boolean -> [[boolean]]
@@ -53,7 +55,8 @@ data GrammarTree   = ExprNum String
                    | ExprOp GrammarTree String GrammarTree
                    | ExprIfThenElse GrammarTree GrammarTree GrammarTree
                    | StmntAss String GrammarTree
-                   | StmntRep GrammarTree [GrammarTree]
+                   | StmntRep GrammarTree GrammarTree
+                   | BlockBlock [GrammarTree]
                    deriving (Show, Eq, Generic, ToRoseTree)
 
 toGrammarTree :: ParseTree -> GrammarTree
@@ -61,9 +64,10 @@ toGrammarTree (PLeaf (Nmbr, n, pos))            = ExprNum n
 toGrammarTree (PLeaf (Var, s, pos))             = ExprVar s
 toGrammarTree (PLeaf (Boolean, b, pos))         = ExprBool b
 toGrammarTree (PNode Stmnt [PNode Var [PLeaf (Var, s, _)], PLeaf (Op, "=", _), e])  = StmntAss s (toGrammarTree e)
-toGrammarTree (PNode Stmnt (PLeaf (ResWord, "repeat", _):e:PLeaf (Brace, "{", _):rest)) = StmntRep (toGrammarTree e) (map toGrammarTree (takeWhile (not . isBraceClose) (filter (not. isSemi) rest))) 
+toGrammarTree (PNode Stmnt [PLeaf (ResWord, "repeat", _), e, block]) = StmntRep (toGrammarTree e) (toGrammarTree block)
 toGrammarTree (PNode Expr [PLeaf (Bracket, "(", _), e1, (PNode Op [PLeaf (Op, o, _)]), e2, PLeaf (Bracket, ")", _)]) = ExprOp (toGrammarTree e1) o (toGrammarTree e2)
 toGrammarTree (PNode Expr [PLeaf (ResWord, "if", _), eIf, PLeaf (ResWord, "then", _), eThen, PLeaf (ResWord, "else", _), eElse])  = ExprIfThenElse (toGrammarTree eIf) (toGrammarTree eThen) (toGrammarTree eElse)
+toGrammarTree (PNode Block (PLeaf (Brace, "{", _):rest)) = BlockBlock (map toGrammarTree (takeWhile (not . isBraceClose) (filter (not. isSemi) rest))) 
 toGrammarTree (PNode _ [sub])                   = toGrammarTree sub
 
 isBraceClose :: ParseTree -> Bool

@@ -28,6 +28,7 @@ data Alphabet = Terminal String               -- Terminal symbol: WILL be includ
               | Nmbr                          -- Number
               | Boolean                       -- Boolean
               | Op                            -- Operation symbol
+              | Block                         -- Blocks
               | Space                         -- Spaces
               | Bracket                       -- Brackets
               | Var                           -- Variables
