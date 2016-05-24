@@ -28,7 +28,7 @@ env = 	[("+", FunType IntType (FunType IntType IntType))
 		,("&&", FunType BoolType (FunType BoolType BoolType))
 		,("||",  FunType BoolType (FunType BoolType BoolType))
 		,("<", FunType IntType (FunType IntType BoolType))
-		(">", FunType IntType (FunType IntType BoolType))
+		,(">", FunType IntType (FunType IntType BoolType))
 		,("yolo", IntType)
 		,("swag", BoolType)
 		,("hello", FunType IntType BoolType)
@@ -49,6 +49,6 @@ typeOf es (BinOp op e1 e2) 				= case maybeType of
 			type2 = typeOf es e2
 			maybeType = find (\(s, FunType t1 (FunType t2 tresult)) -> s == op && t1 == type1 && t2 == type2) es
 -- TODO typeOf es (App e1 e2)	
-typeOf es (TwoTup e1 e2) 				= TupType [typeOf e1, typeOf t2]
-typeOf es (TrheeTup e1 e2 e3)			= TypType [typeOf e1, typeOf t2, typeOf t3]
-typeOf es (Lambda t e)					= FunType t (typeOf e)
+typeOf es (TwoTup e1 e2) 				= TupType [typeOf es e1, typeOf es e2]
+typeOf es (ThreeTup e1 e2 e3)			= TupType [typeOf es e1, typeOf es e2, typeOf es e3]
+typeOf es (Lambda t e)					= FunType t (typeOf es e)
