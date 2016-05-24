@@ -42,7 +42,7 @@ typeOf es	(Var x)						= case maybeType of
 											Just (_, ty) -> ty
 	where maybeType = find (\(s, t) -> s == x) es
 typeOf es (BinOp op e1 e2) 				= case maybeType of
-											Nothing -> error "operator bestaat niet"
+											Nothing -> error ("geen binary operator '" ++ op ++ "'' bekend met type " ++ (show type1) ++ " -> " ++ (show type2) ++ " -> a")
 											Just (_, ty) -> ty
 		where
 			type1 = typeOf es e1
