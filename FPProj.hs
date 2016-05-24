@@ -14,7 +14,6 @@ programme :: Program
 programme	= 	[(A0, [])
 				,(A1, [])
 				,(A2, [])
-				,(B0, [A2])
 				,(B0, [A0, A1])
 				,(B1, [A1, A2])
 				,(B2, [A1, A2, D])
