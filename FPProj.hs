@@ -2,6 +2,8 @@
 
 module Proj where
 
+import Data.Char
+import Data.Either
 import Data.List
 
 -- #1
@@ -41,8 +43,8 @@ type Predicate 	= String
 data Var		= Var String deriving (Show, Eq)
 data Const 		= Const String deriving (Show, Eq)
 
-data Atom2	= ConstAtom (Predicate, Const)
-			| VarAtom (Predicate, Var)
+data Atom2	= ConstAtom Predicate Const
+			| VarAtom Predicate Var
 			deriving (Show, Eq)
 
 type Clause2 = (Atom2, [Atom2])
@@ -55,15 +57,37 @@ class Expr e where
 	(<=~) :: e -> (String, Either Const Var) -> Either e Const
 
 instance Expr Atom2 where
-	(VarAtom (p, Var v)) 	<=~ (x, Right (Var a))	| x == v 	= Left (VarAtom (p, Var a))
-	(VarAtom (p, Var v)) 	<=~ (x, Left (Const a))	| x == v 	= Left (ConstAtom (p, Const a))
+	(VarAtom p (Var v)) 	<=~ (x, Right (Var a))	| x == v 	= Left (VarAtom p (Var a))
+	(VarAtom p (Var v)) 	<=~ (x, Left (Const a))	| x == v 	= Left (ConstAtom p (Const a))
  	e 						<=~ _					= Left e
 
 instance Expr Const where
-	c <=~ _	= Left c
+	c <=~ _	= Right c
 
 instance Expr Var where
 	(Var s)	<=~	(x, Right (Var a))	| x == s	= Left (Var a)
 	(Var s)	<=~ (x, Left (Const a))	| x == s 	= Right (Const a)
 	e 		<=~ _					= Left e
 
+
+rename :: Query2 -> Clause2 -> Clause2
+rename q@(VarAtom qp (Var qv))	c@(VarAtom cp (Var cv), rhs)	| cp == qp && cv == qv	= (VarAtom cp (Var newName), newRhs)
+																| otherwise				= c
+	where
+		newName	= getNewName qv (map atomValue rhs)
+		(newRhs, _)	=  partitionEithers $ map (<=~ (cv, Right (Var newName))) rhs
+
+atomValue :: Atom2 -> String
+atomValue (ConstAtom _ (Const c))	= c
+atomValue (VarAtom _ (Var v))		= v
+
+getNewName :: String -> [String] -> String
+getNewName ""	_			= "This is totally not an easter egg"
+getNewName (x:xs) excluded 	| result `elem` excluded	= getNewName result excluded
+							| otherwise					= result
+	where
+		x'		= nextCapital x
+		result	= (x':xs)
+
+nextCapital :: Char -> Char
+nextCapital x = chr $ (+65) $ (`mod` 26) $ (\x -> x-65) $ (+1) $ ord x
