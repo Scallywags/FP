@@ -77,7 +77,7 @@ rename q@(VarAtom qp (Var qv))	c@(VarAtom cp (Var cv), rhs)	| cp == qp && cv == 
 																| otherwise				= c
 	where
 		newName	= getNewName qv (map atomValue rhs)
-		newRhs	=  lefts $ map (<=~ (cv, Right (Var newName))) rhs
+		newRhs	= lefts $ map (<=~ (cv, Right (Var newName))) rhs
 
 atomValue :: Atom2 -> String
 atomValue (ConstAtom _ (Const c))	= c
@@ -92,7 +92,7 @@ getNewName (x:xs) excluded 	| result `elem` excluded	= getNewName result exclude
 		result	= (x':xs)
 
 nextCapital :: Char -> Char
-nextCapital x = chr $ (+65) $ (`mod` 26) $ (\x -> x-65) $ (+1) $ ord x
+nextCapital x = chr $ (+65) $ (`mod` 26) $ (\y -> y-65) $ (+1) $ ord x
 
 unify :: Atom2 -> Atom2 -> Maybe Substitution
 unify (VarAtom p1 (Var v1))	(VarAtom p2 (Var v2))		| p1 == p2 	= Just (v1, Right (Var v2))
