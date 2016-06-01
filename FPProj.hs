@@ -51,7 +51,7 @@ type Clause2 = (Atom2, [Atom2])
 
 type Program2 = [Clause2]
 
-type Query2 = Atom2
+type Query2 = [Atom2]
 
 type Substitution = (String, Either Const Var)
 
@@ -72,7 +72,7 @@ instance Expr Var where
 	e 		<=~ _					= Left e
 
 
-rename :: Query2 -> Clause2 -> Clause2
+rename :: Atom2 -> Clause2 -> Clause2
 rename q@(VarAtom qp (Var qv))	c@(VarAtom cp (Var cv), rhs)	| cp == qp && cv == qv	= (VarAtom cp (Var newName), newRhs)
 																| otherwise				= c
 	where
