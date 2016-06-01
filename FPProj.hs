@@ -73,6 +73,7 @@ instance Expr Var where
 
 
 rename :: Atom2 -> Clause2 -> Clause2
+rename _						c@(ConstAtom _ _, _)				= c
 rename q@(VarAtom qp (Var qv))	c@(VarAtom cp (Var cv), rhs)	| cp == qp && cv == qv	= (VarAtom cp (Var newName), newRhs)
 																| otherwise				= c
 	where
@@ -100,5 +101,57 @@ unify (VarAtom p1 (Var v1)) (ConstAtom p2 (Const v2))	| p1 == p2 	= Just (v1, Le
 unify _						_							= Nothing
 
 programme2 :: Program2
-programme2 =	[ --TODO
+programme2 =	[(ConstAtom "p" (Const "a"), [])
+				,(ConstAtom "p" (Const "b"), [])
+				,(VarAtom "p" (Var "X"), [(VarAtom "q" (Var "X"))])
+				,(ConstAtom "q" (Const "d"), [])
+				,(VarAtom "q" (Var "X"), [(VarAtom "r" (Var "X"))])
+				,(ConstAtom "r" (Const "e"), [])
 				]
+
+evalOne :: Program2 -> Query2 -> [String]
+evalOne [] _	= ["false"]
+evalOne _ []	= ["true"]
+evalOne ps 	qs	| not $ any (\q -> q `elem` (map fst constMs)) constQs	= ["false"]
+				| otherwise = map show matches
+	where
+		matches = [(a, as) | (a, as) <- ps, q <- qs, predicate q == predicate a]
+		(varQs, constQs)	= splitQuery qs
+		(varMs, constMs)	= splitMatches matches
+		directMatches = [c | (ConstAtom p (Const c), []) <- constMs, q <- varQs, predicate q == p]
+
+
+
+evalAtom :: Program2 -> Atom2 -> [String]
+evalAtom ms (VarAtom p (Var v))		= [] --TODO
+evalAtom ms (ConstAtom p (Const c))	| any (\(ConstAtom _ (Const a), []) -> a == c) constMs	= [c]
+									| otherwise	= [] 		--TODO
+	where
+		(varMs, constMs)	= splitMatches ms
+
+substituteQuery :: Query2 -> Atom2 -> Query2
+substituteQuery [] _	= []
+substituteQuery ((VarAtom p _):qs)	a@(ConstAtom q (Const c))	| p == q	= (ConstAtom p (Const c)):substituteQuery qs a
+																| otherwise	= substituteQuery qs a
+substituteQuery ((ConstAtom p c):qs) a 							= (ConstAtom p c) : substituteQuery qs a
+
+splitQuery :: Query2 -> (Query2, Query2)
+splitQuery q = partition isVarAtom q
+
+splitMatches :: [Clause2] -> ([Clause2], [Clause2])
+splitMatches ms = partition (\(a, as) -> isVarAtom a) ms
+
+isVarAtom :: Atom2 -> Bool
+isVarAtom (VarAtom _ _)		= True
+isVarAtom (ConstAtom _ _ )	= False
+
+matchEq :: Atom2 -> Atom2 -> Bool
+matchEq a@(ConstAtom _ (Const c)) q@(ConstAtom _ (Const b))	= c == b
+
+
+
+
+predicate :: Atom2 -> String
+predicate (VarAtom p _)		= p
+predicate (ConstAtom p _)	= p
+
