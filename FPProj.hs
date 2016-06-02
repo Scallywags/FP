@@ -118,17 +118,27 @@ evalOne ps 	qs	| not $ any (\q -> q `elem` (map fst constMs)) constQs	= ["false"
 		matches = [(a, as) | (a, as) <- ps, q <- qs, predicate q == predicate a]
 		(varQs, constQs)	= splitQuery qs
 		(varMs, constMs)	= splitMatches matches
+        
 		directMatches = [c | (ConstAtom p (Const c), []) <- constMs, q <- varQs, predicate q == p]
 
 
-
+-- Only apply this function when predicates match
 evalAtom :: Program2 -> Atom2 -> [String]
 evalAtom ms (VarAtom p (Var v))		= [] --TODO
 evalAtom ms con@(ConstAtom p (Const c))	| any (\(ConstAtom _ (Const a), []) -> a == c) constMs	= [c]
-										| otherwise	= [] --evalAtom (substituteQuery ms con)
+										| otherwise	= evalAtom (substituteProgram ms (Const c)) con
 	where
 		(varMs, constMs)	= splitMatches ms
 
+        
+-- Only apply this function when predicates match
+substituteProgram :: Program2 -> Const -> Program2
+substituteProgram [] _                          = []
+substituteProgram ((a@(VarAtom p (Var v)),as):ps) c   = (b,bs):(substituteProgram ps c)
+                                        where
+                                            Left b = a <=~ (v, Left c)
+                                            bs = lefts $ map (<=~ (v, Left c)) as
+substituteProgram (p:ps) c                                 = p : substituteProgram ps c
 
 
 substituteQuery :: Query2 -> Atom2 -> Query2
