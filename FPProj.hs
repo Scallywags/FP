@@ -73,7 +73,7 @@ instance Expr Var where
 
 
 rename :: Atom2 -> Clause2 -> Clause2
-rename _						c@(ConstAtom _ _, _)				= c
+rename _						c@(ConstAtom _ _, _)			= c
 rename q@(VarAtom qp (Var qv))	c@(VarAtom cp (Var cv), rhs)	| cp == qp && cv == qv	= (VarAtom cp (Var newName), newRhs)
 																| otherwise				= c
 	where
@@ -124,10 +124,12 @@ evalOne ps 	qs	| not $ any (\q -> q `elem` (map fst constMs)) constQs	= ["false"
 
 evalAtom :: Program2 -> Atom2 -> [String]
 evalAtom ms (VarAtom p (Var v))		= [] --TODO
-evalAtom ms (ConstAtom p (Const c))	| any (\(ConstAtom _ (Const a), []) -> a == c) constMs	= [c]
-									| otherwise	= [] 		--TODO
+evalAtom ms con@(ConstAtom p (Const c))	| any (\(ConstAtom _ (Const a), []) -> a == c) constMs	= [c]
+										| otherwise	= [] --evalAtom (substituteQuery ms con)
 	where
 		(varMs, constMs)	= splitMatches ms
+
+
 
 substituteQuery :: Query2 -> Atom2 -> Query2
 substituteQuery [] _	= []
@@ -147,9 +149,6 @@ isVarAtom (ConstAtom _ _ )	= False
 
 matchEq :: Atom2 -> Atom2 -> Bool
 matchEq a@(ConstAtom _ (Const c)) q@(ConstAtom _ (Const b))	= c == b
-
-
-
 
 predicate :: Atom2 -> String
 predicate (VarAtom p _)		= p
