@@ -33,7 +33,7 @@ isConst _			= False
 
 isVar :: Term -> Bool
 isVar (Var _)		= True
-isVar _				= True
+isVar _				= False
 
 predicate :: Atom -> Pred
 predicate (Atom p _)	= p
@@ -94,17 +94,17 @@ evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 		(solvable', subs')	= evalOne prog qs
 
 		solvable = case term of
-			Var _ 	-> 	(s /= []) || solvable'
+			Var _ 	-> 	(s /= []) && solvable'
 			Const _	-> q `elem` (map fst prog)
 
-		substitutions = s ++ subs'
+		substitutions = if qs == [] then s else intersect s subs'
 
 
 findSubstitutions :: Program -> Atom -> [Substitution]
 findSubstitutions []										_						= []
 findSubstitutions _											(Atom _ (Const _))		= []
 findSubstitutions p@(clause@(a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))	
-	| cpred == qpred	= subs subMaybe
+	| cpred == qpred	= subs ({--trace ("\nsubmaybe = " ++ show subMaybe ++ "\n")--} subMaybe)
 	| otherwise			= findSubstitutions cs q
 	where
 		subMaybe	= unify q a
@@ -112,18 +112,17 @@ findSubstitutions p@(clause@(a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s)
 			
 			Just sub@(_, term) 	-> case term of
 									Const _ -> sub : findSubstitutions cs q
-									Var _ 	-> findSubstitutions restProg (Atom qpred term)				--TODO									--TODO
-										where
-											restProg 	= [c | c@((Atom predic _), rhs) <- cs, predic == qpred]
+									Var _ 	-> snd (trace ("rec = evalOne " ++ show p ++ " " ++ show as ++ " = " ++ show (evalOne p as)) (evalOne p as))
 
 			Nothing 			-> findSubstitutions cs q
 
 
 program :: Program
-program 	= 	[(Atom "p" (Const "a"), []) 	--p(a).
-				,(Atom "p" (Const "b"), [])		--p(b).
-				,(Atom "p" (Const "c"), [])		--p(c).
-				,(Atom "q" (Const "a"), [])		--q(a).
-				,(Atom "q" (Const "b"), [])		--q(b).
-				,(Atom "r" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--r(X) :− p(X),q(X).
+program 	= 	[(Atom "p" (Const "a"), []) 										--p(a).
+				,(Atom "p" (Const "b"), [])											--p(b).
+				,(Atom "p" (Const "c"), [])											--p(c).
+				,(Atom "q" (Const "a"), [])											--q(a).
+				,(Atom "q" (Const "b"), [])											--q(b).
+				,(Atom "r" (Var "X"), [Atom "p" (Var "X")])							--r(X).
+				--,(Atom "r" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--r(X) :− p(X),q(X).
 				]
