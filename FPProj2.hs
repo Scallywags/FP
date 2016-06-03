@@ -130,5 +130,37 @@ program 	= 	[(Atom "p" (Const "a"), []) 										--p(a).
 				,(Atom "p" (Const "c"), [])											--p(c).
 				,(Atom "q" (Const "a"), [])											--q(a).
 				,(Atom "q" (Const "b"), [])											--q(b).
-				,(Atom "r" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--r(X) :− p(X),q(X).
+                ,(Atom "r" (Var "X"), [Atom "q" (Var "X")])                         --r(X) :- q(X).
+				,(Atom "s" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--s(X) :− p(X),q(X).
+                ,(Atom "t" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Const "b")])   --t(X) :- p(X),q(b).
+                ,(Atom "t" (Var "X"), [Atom "p" (Var "a"), Atom "p" (Const "b")])   --t(X) :- p(a),p(b).
+                ,(Atom "u" (Var "X"), [Atom "p" (Const "c"), Atom "r" (Var "X")])   --u(X) :- p(c),r(X).
+                ,(Atom "v" (Const "a"), [Atom "q" (Var "X"), Atom "p" (Const "c"), Atom "r" (Var "X"), Atom "s" (Var "X"), Atom "q" (Const "b")])
+                    --v(a) :- q(X),p(c),r(X),s(X),q(b).
 				]
+                
+query :: Int -> Query
+query 0     = [Atom "p" (Const  "a")]   --p(a)?
+query 1     = [Atom "p" (Const  "c")]   --p(c)?
+query 2     = [Atom "q" (Var    "X")]   --q(X)?
+query 3     = [Atom "r" (Const  "a")]   --r(a)?     !!!
+query 4     = [Atom "r" (Var    "X")]   --r(X)?
+query 5     = [Atom "r" (Var    "A")]   --r(A)?
+query 6     = [Atom "s" (Var    "X")]   --s(X)?
+query 7     = [Atom "s" (Const  "a")]   --s(a)?     !!!
+query 8     = [Atom "t" (Var    "X")]   --t(X)?
+query 9     = [Atom "t" (Const  "a")]   --t(a)?     !!!
+query 10    = [Atom "u" (Const  "a")]   --u(a)?     !!!
+query 11    = [Atom "u" (Var    "X")]   --u(X)?
+query 12    = [Atom "v" (Var    "X")]   --v(X)?
+query 13    = [Atom "v" (Var    "Y")]   --v(Y)?
+query 14    = [Atom "v" (Const  "a")]   --v(a)?
+
+queries :: [Query]
+queries = [query x | x <- [0..14]]
+
+testQuery :: Program -> Query -> (Bool, [Substitution])
+testQuery p q = evalOne p q
+
+test :: Program -> Bool
+test p = and [fst $ evalOne p q | q <- queries]
