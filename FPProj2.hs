@@ -15,6 +15,12 @@ type Pred 	= String
 data Atom 	= Atom Pred Term
 			deriving (Show, Eq)
 
+instance Ord Atom where
+	compare (Atom _ (Var _)) (Atom _ (Var _))		= EQ 
+	compare (Atom _ (Const _)) (Atom _ (Const _))	= EQ
+	compare (Atom _ (Var _)) (Atom _ (Const _)) 	= GT 
+	compare (Atom _ (Const _)) (Atom _ (Var _)) 	= LT 
+
 type Query	= [Atom]
 
 type Clause	= (Atom, [Atom])
@@ -81,13 +87,14 @@ unify a 					_ 				= Nothing
 
 -- ========== Evaluate ==========
 
-type Solution = (Bool, Maybe [Substitution])
+type Solution = (Bool, [Substitution])
 
 evalOne :: Program -> Query -> Solution
-evalOne []		_						= (False, Nothing)
-evalOne _		[]						= (True, Nothing)
-evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
+evalOne []		_						= (False, [])
+evalOne _		[]						= (True, [])
+evalOne prog	query 					= (solvable, substitutions)
 	where
+		(q@(Atom p term):qs) = sort query
 		s = findSubstitutions prog prog q
 		(solvable', subs')	= evalOne prog qs
 
@@ -95,10 +102,9 @@ evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 			Var _ 	-> 	(s /= []) && solvable'
 			Const _	-> q `elem` (map fst prog)
 
-		substitutions = case subs' of 
-							Nothing 	-> Just s
-							Just []		-> Just s
-							Just subs 	-> Just (intersect s subs)
+		substitutions 	| isVar term 	=	if qs == [] then s else intersect s subs'
+						| not solvable	= 	[]
+						| otherwise		= 	subs'
 
 
 findSubstitutions ::Program -> Program -> Atom -> [Substitution]
@@ -112,10 +118,8 @@ findSubstitutions p 	((a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))
 		subs subM	= case subM of
 			
 			Just sub@(_, term) 	-> case term of
-									Const _ -> sub : findSubstitutions p cs q
-									Var _ 	-> case (snd (evalOne p as)) of
-										Nothing		->	findSubstitutions p cs q
-										Just rec	-> 	rec
+									Const _ 	-> sub : findSubstitutions p cs q
+									Var _ 		-> snd (evalOne p as)
 
 			Nothing 			-> findSubstitutions p cs q
 
