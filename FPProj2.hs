@@ -5,8 +5,6 @@ module FPProj2 where
 import Data.List
 import Data.Maybe
 
-import Debug.Trace
-
 -- ========== Types etc. ==========
 
 data Term	= Const String
@@ -90,7 +88,7 @@ evalOne []		_						= (False, [])
 evalOne _		[]						= (True, [])
 evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 	where
-		s = findSubstitutions prog q
+		s = findSubstitutions prog prog q
 		(solvable', subs')	= evalOne prog qs
 
 		solvable = case term of
@@ -100,21 +98,21 @@ evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 		substitutions = if qs == [] then s else intersect s subs'
 
 
-findSubstitutions :: Program -> Atom -> [Substitution]
-findSubstitutions []										_						= []
-findSubstitutions _											(Atom _ (Const _))		= []
-findSubstitutions p@(clause@(a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))	
-	| cpred == qpred	= subs ({--trace ("\nsubmaybe = " ++ show subMaybe ++ "\n")--} subMaybe)
-	| otherwise			= findSubstitutions cs q
+findSubstitutions ::Program -> Program -> Atom -> [Substitution]
+findSubstitutions _		[]										_						= []
+findSubstitutions _		_										(Atom _ (Const _))		= []
+findSubstitutions p 	((a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))	
+	| cpred == qpred	= subs subMaybe
+	| otherwise			= findSubstitutions p cs q
 	where
 		subMaybe	= unify q a
 		subs subM	= case subM of
 			
 			Just sub@(_, term) 	-> case term of
-									Const _ -> sub : findSubstitutions cs q
-									Var _ 	-> snd (trace ("rec = evalOne " ++ show p ++ " " ++ show as ++ " = " ++ show (evalOne p as)) (evalOne p as))
+									Const _ -> sub : findSubstitutions p cs q
+									Var _ 	-> snd (evalOne p as)
 
-			Nothing 			-> findSubstitutions cs q
+			Nothing 			-> findSubstitutions p cs q
 
 
 program :: Program
@@ -123,6 +121,5 @@ program 	= 	[(Atom "p" (Const "a"), []) 										--p(a).
 				,(Atom "p" (Const "c"), [])											--p(c).
 				,(Atom "q" (Const "a"), [])											--q(a).
 				,(Atom "q" (Const "b"), [])											--q(b).
-				,(Atom "r" (Var "X"), [Atom "p" (Var "X")])							--r(X).
-				--,(Atom "r" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--r(X) :− p(X),q(X).
+				,(Atom "r" (Var "X"), [Atom "p" (Var "X"), Atom "q" (Var "X")])		--r(X) :− p(X),q(X).
 				]
