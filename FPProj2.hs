@@ -81,11 +81,11 @@ unify a 					_ 				= Nothing
 
 -- ========== Evaluate ==========
 
-type Solution = (Bool, [Substitution])
+type Solution = (Bool, Maybe [Substitution])
 
 evalOne :: Program -> Query -> Solution
-evalOne []		_						= (False, [])
-evalOne _		[]						= (True, [])
+evalOne []		_						= (False, Nothing)
+evalOne _		[]						= (True, Nothing)
 evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 	where
 		s = findSubstitutions prog prog q
@@ -95,7 +95,10 @@ evalOne prog	(q@(Atom p term):qs)	= (solvable, substitutions)
 			Var _ 	-> 	(s /= []) && solvable'
 			Const _	-> q `elem` (map fst prog)
 
-		substitutions = if qs == [] then s else intersect s subs'
+		substitutions = case subs' of 
+							Nothing 	-> Just s
+							Just []		-> Just s
+							Just subs 	-> Just (intersect s subs)
 
 
 findSubstitutions ::Program -> Program -> Atom -> [Substitution]
@@ -110,7 +113,9 @@ findSubstitutions p 	((a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))
 			
 			Just sub@(_, term) 	-> case term of
 									Const _ -> sub : findSubstitutions p cs q
-									Var _ 	-> snd (evalOne p as)
+									Var _ 	-> case (snd (evalOne p as)) of
+										Nothing		->	findSubstitutions p cs q
+										Just rec	-> 	rec
 
 			Nothing 			-> findSubstitutions p cs q
 
