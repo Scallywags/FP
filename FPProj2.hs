@@ -83,7 +83,7 @@ generateStrings = concat $ iterate (zipWith (++) aTOz) aTOz
 
 unify :: Atom -> Atom -> Maybe Substitution
 unify (Atom p1 t1@(Var x))	(Atom p2 t2)	| p1 == p2	= Just (t1, t2)
-unify a 					_ 				= Nothing
+unify _ 					_ 				= Nothing
 
 -- ========== Evaluate ==========
 
