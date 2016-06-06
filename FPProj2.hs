@@ -164,8 +164,5 @@ query 14    = [Atom "v" (Const  "a")]   --v(a)?
 queries :: [Query]
 queries = [query x | x <- [0..14]]
 
-testQuery :: Program -> Query -> (Bool, [Substitution])
-testQuery p q = evalOne p q
-
 test :: Program -> Bool
 test p = and [fst $ evalOne p q | q <- queries]
