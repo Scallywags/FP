@@ -166,3 +166,8 @@ queries = [query x | x <- [0..14]]
 
 test :: Program -> Bool
 test p = and [fst $ evalOne p q | q <- queries]
+
+parse :: String -> Solution
+parse (p:'(':c:')':[])  | isLower c = evalOne program [Atom [p] (Const [c])]
+                        | otherwise = evalOne program [Atom [p] (Var [c])]
+parse _                 = error "Parse error"
