@@ -27,10 +27,10 @@ type Solution       = (Bool, [Substitution])
 
 -- =========== Unify ===========
 
-unify :: Atom -> Atom -> Substitution
+unify :: Atom -> Atom -> Maybe Substitution
 unify a1 a2     = unify' [] a1 a2
 
-unify' :: Substitution -> Atom -> Atom -> Substitution
+unify' :: Substitution -> Atom -> Atom -> Maybe Substitution
 unify' subs     (Atom p1 (t1@(Var x):terms1))   (Atom p2 (t2:terms2))           | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
     where
         sub = (t1, t2)
@@ -42,12 +42,15 @@ unify' subs     (Atom p1 (t1@(Const x):terms1)) (Atom p2 (t2@(Var y):terms2))   
         newTerms1 = map (<=~ sub) terms1
         newTerms2 = map (<=~ sub) terms2
 unify' subs     (Atom p1 ((Const x):terms1))    (Atom p2 ((Const y):terms2))    | p1 == p2 && x == y    = unify' subs (Atom p1 terms1)  (Atom p2 terms2)
-unify' subs     (Atom p1 [])                    (Atom p2 [])                    | p1 == p2              = subs
-unify' _        _                               _                               = []
+unify' subs     (Atom p1 [])                    (Atom p2 [])                    | p1 == p2              = Just subs
+unify' _        _                               _                               = Nothing
 
+-- =========== Expression type class ===========
 
 class Expr e where
     (<=~) :: e -> (Term, Term) -> e
+
+    rename :: e -> String -> e
 
 instance Expr Term where
     (Var x)         <=~     (Var y, replacement)    | x == y    = replacement
@@ -55,37 +58,92 @@ instance Expr Term where
     (Var x)         <=~     (Const y, _)            = Var x
     (Const x)       <=~     _                       = Const x
 
+    rename (Var _)      name                        =  Var name
+    rename (Const x)    _                           =  Const x
+
 instance Expr Atom where
     (Atom p ts)     <=~     sub     = Atom p (map (<=~ sub) ts)
+
+    rename (Atom p terms)   name    = Atom p (map (`rename` name) terms)
 
 instance Expr Clause where
     (a, as)         <=~     sub     = (a <=~ sub, map (<=~ sub) as)
 
+    rename (a, as)          name    = (rename a name, (map (`rename` name) as))
+
 instance Expr Program where
     prog            <=~     sub     = map (<=~ sub) prog
+
+    rename prog             name   = map (`rename` name) prog
 
 -- =========== Evaluate ===========
 
 evalMulti :: Program -> Query -> Solution
-evalMulti prog (q:qs) = (solvable, subs)   --TODO
+evalMulti prog  []      = true
+evalMulti prog (q:qs)   = 
     where
-        solvable = False --TODO
-        subs = [] --TODO
+        
 
 
 
+evalMulti _     []      = undefined
 
-findSubstitutions :: Program -> Program -> Atom -> [Substitution]
-findSubstitutions _     []                             _        = []
-findSubstitutions prog  ((a@(Atom cpred cterms), as):cs)    q@(Atom qpred qterms)
-    | cpred == qpred && length cterms == length qterms          = subs
-    | otherwise = findSubstitutions prog cs q
+true :: Solution
+true = (True, [])
+
+false :: Solution
+false = (False, [])
+
+findSubs :: Program -> Atom -> Query -> Solution
+findSubs prog _ []  = true
+findSubs prog (Atom cpred (t@(Var x):ts)) (q@(Atom qpred qterms):qs)    = false --TODO
     where
-        ((t1, ts2):ts) = unify q a
-        subs = case ts2 of
-            Var x   ->  snd (evalMulti prog as) --TODO use ts?
-            Const x ->  [] --TODO
+        prog' = rename prog x
+
+
+        (solvable', subs')  = findSubs prog' ts qs
+
+
 
 
 -- =========== Test Program ===========
 
+program :: Program
+program     =   [(Atom "mother" [Const "emma", Const "wilhelmina"], [])
+                ,(Atom "mother" [Const "wilhelmina", Const "juliana"], [])
+                ,(Atom "mother" [Const "juliana", Const "beatrix"], [])
+                ,(Atom "mother" [Const "juliana", Const "margriet"], [])
+                ,(Atom "mother" [Const "juliana", Const "irene"], [])
+                ,(Atom "mother" [Const "juliana", Const "christina"], [])
+                ,(Atom "mother" [Const "margriet", Const "maurits"], [])
+                ,(Atom "mother" [Const "margriet", Const "bernhard_jr"], [])
+                ,(Atom "mother" [Const "margriet", Const "pieter_christiaan"], [])
+                ,(Atom "mother" [Const "margriet", Const "floris"], [])
+                ,(Atom "mother" [Const "beatrix", Const "alexander"], [])
+                ,(Atom "mother" [Const "beatrix", Const "friso"], [])
+                ,(Atom "mother" [Const "beatrix", Const "constantijn"], [])
+                ,(Atom "mother" [Const "maxima", Const "amalia"], [])
+                ,(Atom "mother" [Const "maxima", Const "alexia"], [])
+                ,(Atom "mother" [Const "maxima", Const "ariane"], [])
+
+                ,(Atom "husband" [Const "bernhard", Const "juliana"], [])
+                ,(Atom "husband" [Const "claus", Const "beatrix"], [])
+                ,(Atom "husband" [Const "pieter", Const "margriet"], [])
+                ,(Atom "husband" [Const "alexander", Const "maxima"], [])
+                ,(Atom "husband" [Const "friso", Const "mabel"], [])
+                ,(Atom "husband" [Const "constantijn", Const "laurentien"], [])
+
+                ,(Atom "female" [Const "irene"], [])
+                ,(Atom "female" [Const "christina"], [])
+                ,(Atom "female" [Const "amalia"], [])
+                ,(Atom "female" [Const "alexia"], [])
+                ,(Atom "female" [Const "ariane"], [])
+                ,(Atom "female" [Var "X"], [Atom "mother" [Var "X", Var "_"]])
+                ,(Atom "female" [Var "X"], [Atom "husband" [Var "_", Var "X"]])
+
+                ,(Atom "male" [Const "maurits"], [])
+                ,(Atom "male" [Const "bernhard_jr"], [])
+                ,(Atom "male" [Const "pieter_christiaan"], [])
+                ,(Atom "male" [Const "floris"], [])
+                ,(Atom "male" [Var "X"], [Atom "husband" [Var "X", Var "_"]])
+                ]
