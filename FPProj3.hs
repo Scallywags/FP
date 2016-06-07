@@ -103,31 +103,29 @@ evalMulti prog query    = case evalMulti' prog query of
 evalMulti' :: Program -> Query -> Maybe [Substitution]
 evalMulti' _        []      = Just []
 evalMulti' prog     (q:qs)  | subsMaybe == Nothing    = Nothing
-                            | otherwise               = Just (sub ++ fromJust (evalMulti' prog qs))
+                            | otherwise               = Just (sub : fromJust (evalMulti' prog qs))
     where
-        subsMaybe = findSubs q prog
+        subsMaybe = findSubs prog q prog
         sub = fromJust subsMaybe
 
-findSubs :: Atom -> Program -> Maybe [Substitution]
-findSubs (Atom _ [])                 _                      = Just []
-{-findSubs q@(Atom p ((Const x):ts))   prog@(c@(a, as):cs)    = findSubs ts prog
-findSubs q@(Atom p ((Var x):ts))     prog@(c@(a, as):cs)    = Just (sub:fromJust (findSubs ts prog))
+findSubs :: Program -> Atom -> Program -> Maybe Substitution
+findSubs pro (Atom _ [])                 _                      = Just []
+findSubs pro q@(Atom p ((Const x):ts))   prog@(c@(a, as):cs)    = findSubs pro (Atom p ts) prog
+findSubs pro q@(Atom p ((Var x):ts))     prog@(c@(a, as):cs)    = Just (sub ++ fromJust (findSubs pro (Atom p ts) cs))
     where
         unificMaybe = unify q a
         sub = case unificMaybe of
             Just subs   -> subs
             Nothing     -> []
 
-        matches = getMatches q prog
--}
-
-
+{-
 getMatches :: Atom -> Program -> [[Clause]]
 getMatches (Atom _ [])                     _    = []
 getMatches q@(Atom qp qts@((Const x):ts))  cs   = getMatches (Atom qp ts) cs
 getMatches q@(Atom qp qts@((Var x):ts))    cs   = matches : getMatches (Atom qp ts) cs
     where
         matches = [c | c@(a@(Atom cp cts), _) <- cs, qp == cp, length cts == length qts, unify q a /= Nothing]
+-}
 
 -- =========== Example Program ===========
 
