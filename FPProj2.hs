@@ -2,6 +2,7 @@ module FPProj2 where
 
 import Data.List
 import Data.Maybe
+import Data.Char
 
 -- ========== Types etc. ==========
 
