@@ -80,12 +80,9 @@ instance Expr Program where
 
 evalMulti :: Program -> Query -> Solution
 evalMulti prog  []      = true
-evalMulti prog (q:qs)   = 
-    where
-        
+--evalMulti prog (q:qs)   = 
+--    where
 
-
-evalMulti _     []      = undefined
 
 true :: Solution
 true = (True, [])
@@ -219,7 +216,7 @@ familyStatements = [("mother(emma,wilhelmina)", [])
                    ,("mother(juliana,christina)", [])
                    ,("mother(margriet,maurits)", [])
                    ,("mother(margriet,bernhard_jr)", [])
-                   ,("mother(margriet,pieterchristiaan)", [])
+                   ,("mother(margriet,pieter_christiaan)", [])
                    ,("mother(margriet,floris)", [])
                    ,("mother(beatrix,alexander)", [])
                    ,("mother(beatrix,friso)", [])
@@ -245,7 +242,7 @@ familyStatements = [("mother(emma,wilhelmina)", [])
 
                    ,("male(maurits)", [])
                    ,("male(bernhard_jr)", [])
-                   ,("male(pieterchristiaan)", [])
+                   ,("male(pieter_christiaan)", [])
                    ,("male(floris)", [])
                    ,("male(X)", ["husband(X,_)"])
                    ]
