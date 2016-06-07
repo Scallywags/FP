@@ -77,8 +77,12 @@ instance Expr Program where
     rename prog             name   = map (`rename` name) prog
 
 -- =========== Evaluate ===========
-    
 
+evalMulti :: Program -> Query -> Solution
+evalMulti prog  []      = true
+evalMulti prog (q:qs)   = 
+    where
+        
 
 
 evalMulti _     []      = undefined
