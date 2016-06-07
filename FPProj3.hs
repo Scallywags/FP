@@ -110,6 +110,7 @@ evalMulti' prog     (q:qs)  | subsMaybe == Nothing    = Nothing
 
 findSubs :: Program -> Atom -> Program -> Maybe Substitution
 findSubs pro (Atom _ [])                 _                      = Just []
+findSubs pro _                           []                     = Nothing
 findSubs pro q@(Atom p ((Const x):ts))   prog@(c@(a, as):cs)    = findSubs pro (Atom p ts) prog
 findSubs pro q@(Atom p ((Var x):ts))     prog@(c@(a, as):cs)    = Just (sub ++ fromJust (findSubs pro (Atom p ts) cs))
     where
