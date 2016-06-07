@@ -25,9 +25,15 @@ type Substitution   = [(Term, Term)]
 
 type Solution       = (Bool, [Substitution])
 
-value :: Term -> String
-value (Var x)   = x
-value (Const x) = x
+val :: Term -> String
+val (Var x)   = x
+val (Const x) = x
+
+value :: Atom -> [String]
+value (Atom _ terms) = [val t | t <- terms]
+
+predicate :: Atom -> Predicate
+predicate (Atom p _)    = p
 
 -- =========== Unify ===========
 
@@ -38,13 +44,13 @@ unify' :: Substitution -> Atom -> Atom -> Maybe Substitution
 unify' subs     (Atom p1 (t1@(Var x):terms1))   (Atom p2 (t2:terms2))           | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
     where
         sub = (t1, t2)
-        newTerms1 = map (<=~ sub) terms1
-        newTerms2 = map (<=~ sub) terms2
+        newTerms1 = map (<=~ [sub]) terms1
+        newTerms2 = map (<=~ [sub]) terms2
 unify' subs     (Atom p1 (t1@(Const x):terms1)) (Atom p2 (t2@(Var y):terms2))   | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
     where
         sub = (t2, t1)
-        newTerms1 = map (<=~ sub) terms1
-        newTerms2 = map (<=~ sub) terms2
+        newTerms1 = map (<=~ [sub]) terms1
+        newTerms2 = map (<=~ [sub]) terms2
 unify' subs     (Atom p1 ((Const x):terms1))    (Atom p2 ((Const y):terms2))    | p1 == p2 && x == y    = unify' subs (Atom p1 terms1)  (Atom p2 terms2)
 unify' subs     (Atom p1 [])                    (Atom p2 [])                    | p1 == p2              = Just subs
 unify' _        _                               _                               = Nothing
@@ -52,34 +58,36 @@ unify' _        _                               _                               
 -- =========== Expression type class ===========
 
 class Expr e where
-    (<=~) :: e -> (Term, Term) -> e
+    (<=~) :: e -> Substitution -> e
 
 instance Expr Term where
-    (Var x)         <=~     (Var y, replacement)    | x == y    = replacement
-                                                    | otherwise = Var x
-    (Var x)         <=~     (Const y, _)            = Var x
-    (Const x)       <=~     _                       = Const x
+    (Var x)         <=~     subs     = case find (\(Var y, repl) -> y == x) subs of
+        Just (_, repl)  -> repl
+        Nothing         -> Var x
+
+    (Const x)       <=~     _        = Const x
 
 instance Expr Atom where
-    (Atom p ts)     <=~     sub     = Atom p (map (<=~ sub) ts)
+    (Atom p ts)     <=~     subs     = Atom p (map (<=~ subs) ts)
 
 instance Expr Clause where
-    (a, as)         <=~     sub     = (a <=~ sub, map (<=~ sub) as)
+    (a, as)         <=~     subs     = (a <=~ subs, map (<=~ subs) as)
 
 instance Expr Program where
-    prog            <=~     sub     = map (<=~ sub) prog
+    prog            <=~     subs     = map (<=~ subs) prog
 
--- ========== Rename ==========
+-- =========== Rename ===========
 
-rename :: Clause -> Query -> Clause
-rename a@(Atom p t1, _) qs  = rename' a sub
+rename :: Query -> Clause -> Clause
+rename query clause = foldr rename' clause query
+
+rename' :: Atom -> Clause -> Clause
+rename' (Atom q qts) c@(Atom p ts, _)
+    | p == q    = c <=~ subs
+    | otherwise = c                                         
     where
-        s = head $ dropWhile (`elem` (map value qs)) names
-        sub = (t1, Var s)
-
-rename' :: Clause -> (Term, Term) -> Clause
-rename' (a, as) s   = (a <=~ s, map (<=~ s) as)
-
+        eligableNames = filter (not . (`elem` (map val qts))) names
+        subs = zip ts (map Var eligableNames)
 
 names :: [String]
 names = concat $ iterate (zipWith (++) aTOz) aTOz
@@ -87,37 +95,39 @@ names = concat $ iterate (zipWith (++) aTOz) aTOz
 
 -- =========== Evaluate ===========
 
-true :: Solution
-true = (True, [])
-
-false :: Solution
-false = (False, [])
-
 evalMulti :: Program -> Query -> Solution
-evalMulti prog []      = true
-evalMulti prog (q:qs)  = (solvable, substitutions)
+evalMulti prog query    = case evalMulti' prog query of
+                            Just subs   -> (True, subs)
+                            Nothing     -> (False, [])
+
+evalMulti' :: Program -> Query -> Maybe [Substitution]
+evalMulti' _        []      = Just []
+evalMulti' prog     (q:qs)  | subsMaybe == Nothing    = Nothing
+                            | otherwise               = Just (sub ++ fromJust (evalMulti' prog qs))
     where
-        s = findSubs prog prog q
-        (solvable', subs')  = evalOne prog qs
+        subsMaybe = findSubs q prog
+        sub = fromJust subsMaybe
 
-        solvable = case term of
-            Var _   ->  (s /= []) && solvable'
-            Const _ -> case q `elem` (map fst prog) of
-                                True    ->  True
-                                False   ->  (Var "X", term) `elem` subsrec
-                                    where
-                                        varAtom = Atom p (Var "X")
-                                        (_, subsrec)    = evalOne prog [varAtom]
+findSubs :: Atom -> Program -> Maybe [Substitution]
+findSubs (Atom _ [])                 _                      = Just []
+{-findSubs q@(Atom p ((Const x):ts))   prog@(c@(a, as):cs)    = findSubs ts prog
+findSubs q@(Atom p ((Var x):ts))     prog@(c@(a, as):cs)    = Just (sub:fromJust (findSubs ts prog))
+    where
+        unificMaybe = unify q a
+        sub = case unificMaybe of
+            Just subs   -> subs
+            Nothing     -> []
 
-        substitutions   | isVar term    =   if qs == [] then s else intersect s subs'
-                        | not solvable  =   []
-                        | otherwise     =   subs'
+        matches = getMatches q prog
+-}
 
 
-findSubs :: Program -> Atom -> Query -> [Substitution]
-findSubs prog _ []  = true
-findSubs prog (Atom cpred (t@(Var x):ts)) (q@(Atom qpred qterms):qs)    = [] --TODO
-
+getMatches :: Atom -> Program -> [[Clause]]
+getMatches (Atom _ [])                     _    = []
+getMatches q@(Atom qp qts@((Const x):ts))  cs   = getMatches (Atom qp ts) cs
+getMatches q@(Atom qp qts@((Var x):ts))    cs   = matches : getMatches (Atom qp ts) cs
+    where
+        matches = [c | c@(a@(Atom cp cts), _) <- cs, qp == cp, length cts == length qts, unify q a /= Nothing]
 
 -- =========== Example Program ===========
 
