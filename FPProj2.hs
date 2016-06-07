@@ -111,7 +111,7 @@ evalOne prog	query 					= (solvable, substitutions)
 						| otherwise		= 	subs'
 
 
-findSubstitutions ::Program -> Program -> Atom -> [Substitution]
+findSubstitutions :: Program -> Program -> Atom -> [Substitution]
 findSubstitutions _		[]										_						= []
 findSubstitutions _		_										(Atom _ (Const _))		= []
 findSubstitutions p 	((a@(Atom cpred cterm), as):cs)	q@(Atom qpred (Var s))	

@@ -25,6 +25,10 @@ type Substitution   = [(Term, Term)]
 
 type Solution       = (Bool, [Substitution])
 
+value :: Term -> String
+value (Var x)   = x
+value (Const x) = x
+
 -- =========== Unify ===========
 
 unify :: Atom -> Atom -> Maybe Substitution
@@ -50,39 +54,38 @@ unify' _        _                               _                               
 class Expr e where
     (<=~) :: e -> (Term, Term) -> e
 
-    rename :: e -> String -> e
-
 instance Expr Term where
     (Var x)         <=~     (Var y, replacement)    | x == y    = replacement
                                                     | otherwise = Var x
     (Var x)         <=~     (Const y, _)            = Var x
     (Const x)       <=~     _                       = Const x
 
-    rename (Var _)      name                        =  Var name
-    rename (Const x)    _                           =  Const x
-
 instance Expr Atom where
     (Atom p ts)     <=~     sub     = Atom p (map (<=~ sub) ts)
-
-    rename (Atom p terms)   name    = Atom p (map (`rename` name) terms)
 
 instance Expr Clause where
     (a, as)         <=~     sub     = (a <=~ sub, map (<=~ sub) as)
 
-    rename (a, as)          name    = (rename a name, (map (`rename` name) as))
-
 instance Expr Program where
     prog            <=~     sub     = map (<=~ sub) prog
 
-    rename prog             name   = map (`rename` name) prog
+-- ========== Rename ==========
+
+rename :: Clause -> Query -> Clause
+rename a@(Atom p t1, _) qs  = rename' a sub
+    where
+        s = head $ dropWhile (`elem` (map value qs)) names
+        sub = (t1, Var s)
+
+rename' :: Clause -> (Term, Term) -> Clause
+rename' (a, as) s   = (a <=~ s, map (<=~ s) as)
+
+
+names :: [String]
+names = concat $ iterate (zipWith (++) aTOz) aTOz
+    where aTOz = map (:[]) ['A'..'Z']
 
 -- =========== Evaluate ===========
-
-evalMulti :: Program -> Query -> Solution
-evalMulti prog  []      = true
---evalMulti prog (q:qs)   = 
---    where
-
 
 true :: Solution
 true = (True, [])
@@ -90,9 +93,30 @@ true = (True, [])
 false :: Solution
 false = (False, [])
 
-findSubs :: Program -> Atom -> Query -> Solution
+evalMulti :: Program -> Query -> Solution
+evalMulti prog []      = true
+evalMulti prog (q:qs)  = (solvable, substitutions)
+    where
+        s = findSubs prog prog q
+        (solvable', subs')  = evalOne prog qs
+
+        solvable = case term of
+            Var _   ->  (s /= []) && solvable'
+            Const _ -> case q `elem` (map fst prog) of
+                                True    ->  True
+                                False   ->  (Var "X", term) `elem` subsrec
+                                    where
+                                        varAtom = Atom p (Var "X")
+                                        (_, subsrec)    = evalOne prog [varAtom]
+
+        substitutions   | isVar term    =   if qs == [] then s else intersect s subs'
+                        | not solvable  =   []
+                        | otherwise     =   subs'
+
+
+findSubs :: Program -> Atom -> Query -> [Substitution]
 findSubs prog _ []  = true
-findSubs prog (Atom cpred (t@(Var x):ts)) (q@(Atom qpred qterms):qs)    = false --TODO
+findSubs prog (Atom cpred (t@(Var x):ts)) (q@(Atom qpred qterms):qs)    = [] --TODO
 
 
 -- =========== Example Program ===========
