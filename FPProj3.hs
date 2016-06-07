@@ -160,10 +160,6 @@ program     =   [(Atom "mother" [Const "emma", Const "wilhelmina"], [])
                 ,(Atom "male" [Const "floris"], [])
                 ,(Atom "male" [Var "X"], [Atom "husband" [Var "X", Var "_"]])
                 ]
-
-            
-
-            
             
 -- ============= Parser =============
 
