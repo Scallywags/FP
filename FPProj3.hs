@@ -77,12 +77,7 @@ instance Expr Program where
     rename prog             name   = map (`rename` name) prog
 
 -- =========== Evaluate ===========
-
-evalMulti :: Program -> Query -> Solution
-evalMulti prog  []      = true
-evalMulti prog (q:qs)   = 
-    where
-        
+    
 
 
 
@@ -166,8 +161,8 @@ parse ps = Atom name terms
         terms            = parseTerms Q0 rest []
 
 parseTerms :: State -> String -> [Term] -> [Term]
-parseTerms Q0 (p:ps)   ts | isLower p = parseTerms Q1 rest (ts ++ [Const name])
-                          | isUpper p = parseTerms Q1 rest (ts ++ [Var   name])
+parseTerms Q0 (p:ps)   ts | isLower p               = parseTerms Q1 rest (ts ++ [Const name])
+                          | isUpper p || p == '_'   = parseTerms Q1 rest (ts ++ [Var   name])
     where
         (name, rest) = parseName [] (p:ps)
 parseTerms Q1 (p:ps)   ts | p == ','  = parseTerms Q0 ps ts
@@ -178,5 +173,121 @@ parseTerms _  _        _              = error "Parse error"
 
 
 parseName :: String -> String -> (String, String)
-parseName rs (s:ss) | isLetter s = parseName (rs ++ [s]) ss
-                    | otherwise  = (rs, (s:ss))
+parseName rs (s:ss) | isLetter s || s == '_' = parseName (rs ++ [s]) ss
+                    | otherwise              = (rs, (s:ss))
+
+parseClause :: (String, [String]) -> Clause
+parseClause (s, ss) = (parse s, map parse ss)
+                    
+                    
+                    
+-- =========== Test Program ===========
+
+statements :: [(String, [String])]
+statements = [("p(a)", [])
+             ,("p(b)", [])
+             ,("p(c)", [])
+             ,("q(a)", [])
+             ,("q(b)", [])
+             
+             ,("r(X)", ["q(X)"])
+             ,("s(X)", ["p(X)", "q(X)"])
+             ,("t(X)", ["p(X)", "q(b)"])
+             ,("t(X)", ["p(a)", "p(b)"])
+             ,("u(X)", ["p(c)", "r(X)"])
+             ,("v(a)", ["q(X)", "p(c)", "r(X)", "s(X)", "q(b)"])
+             ,("w(Y)", ["r(Y)"])
+             ,("r(A)", ["p(Y)"])
+             
+             ,("mother(anna, june)", [])
+             ,("mother(philip, anna)", [])
+             ,("isMotherAndHasChild(X, Y)", ["mother(Y,X)"])
+             ,("aaa(bbb, CCC)", [])
+             ,("aaa(X, bbb)", ["q(X)"])
+             ]
+
+familyStatements :: [(String, [String])]
+familyStatements = [("mother(emma,wilhelmina)", [])
+                   ,("mother(wilhelmina,juliana)", [])
+                   ,("mother(juliana,beatrix)", [])
+                   ,("mother(juliana,margriet)", [])
+                   ,("mother(juliana,irene)", [])
+                   ,("mother(juliana,christina)", [])
+                   ,("mother(margriet,maurits)", [])
+                   ,("mother(margriet,bernhard_jr)", [])
+                   ,("mother(margriet,pieterchristiaan)", [])
+                   ,("mother(margriet,floris)", [])
+                   ,("mother(beatrix,alexander)", [])
+                   ,("mother(beatrix,friso)", [])
+                   ,("mother(beatrix,constantijn)", [])
+                   ,("mother(maxima,amalia)", [])
+                   ,("mother(maxima,alexia)", [])
+                   ,("mother(maxima,ariane)", [])
+
+                   ,("husband(bernhard,juliana)", [])
+                   ,("husband(claus,beatrix)", [])
+                   ,("husband(pieter,margriet)", [])
+                   ,("husband(alexander,maxima)", [])
+                   ,("husband(friso,mabel)", [])
+                   ,("husband(constantijn,laurentien)", [])
+
+                   ,("female(irene)", [])
+                   ,("female(christina)", [])
+                   ,("female(amalia)", [])
+                   ,("female(alexia)", [])
+                   ,("female(ariane)", [])
+                   ,("female(X)", ["mother(X,_)"])
+                   ,("female(X)", ["husband(_,X)"])
+
+                   ,("male(maurits)", [])
+                   ,("male(bernhard_jr)", [])
+                   ,("male(pieterchristiaan)", [])
+                   ,("male(floris)", [])
+                   ,("male(X)", ["husband(X,_)"])
+                   ]
+                   
+smallStatements :: [(String, [String])]
+smallStatements = [("p(a)", [])
+                  ,("p(b)", [])
+                  ,("p(c)", [])
+                  ,("q(a)", [])
+                  ,("q(b)", [])
+                  ,("r(X)", ["p(X)"])
+                  ,("s(X)", ["p(X)", "q(X)"])
+                  ]
+                    
+program2 :: Program
+program2 = map parseClause statements
+
+familyProgram :: Program
+familyProgram = map parseClause familyStatements
+
+smallProgram :: Program
+smallProgram = map parseClause smallStatements
+
+
+
+-- ============= Tests =============
+familyQueries :: [Query]
+familyQueries = [ [parse "mother(maxima, ariane)"]
+                , [parse "mother(X, floris)"]
+                , [parse "mother(margriet, A)"]
+                , [parse "husband(pieter, margriet)"]
+                , [parse "female(christina)"]
+                , [parse "female(maxima)"]
+                , [parse "male(X)"]
+                , [parse "husband(X, Y)"]
+                , [parse "male(alexander)"]
+                ]
+                
+falseFamilyQueries = [ [parse "female(alexander)"]
+                     , [parse "mother(maxima, maurits)"]
+                     , [parse "mother(X, laurentien)"]
+                     , [parse "female(argOne, argTwo)"]
+                     , [parse "mother(argOne)"]
+                     ]
+
+familyTest :: Bool
+familyTest = (and $ map (fst) $ map (evalMulti familyProgram) familyQueries)            -- All statements are true
+             &&
+             (not $ or $ map (fst) $ map (evalMulti familyProgram) falseFamilyQueries)  -- All statements are false
