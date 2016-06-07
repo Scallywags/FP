@@ -4,7 +4,7 @@ module FPProj3 where
 
 import Data.List
 import Data.Maybe
-
+import Data.Char
 
 -- =========== Types ===========
 
@@ -85,7 +85,47 @@ findSubstitutions prog  ((a@(Atom cpred cterms), as):cs)    q@(Atom qpred qterms
         subs = case ts2 of
             Var x   ->  snd (evalMulti prog as) --TODO use ts?
             Const x ->  [] --TODO
+            
+
+            
+            
+-- ============= Parser =============
+
+data State = Q0 | Q1
+
+{-- TODO this will not work until evalMulti works. In the meantime we can use the function below.
+
+parse :: String -> Solution
+parse (p:ps) = evalMulti program [Atom name terms]
+    where
+        (name, '(':rest) = parseName [] (p:ps)
+        terms            = parseTerms Q0 rest []
+parse _      = error "Parse error in parse"
+--}
+
+parse :: String -> Atom
+parse ps = Atom name terms
+    where
+        (name, '(':rest) = parseName  [] ps
+        terms            = parseTerms Q0 rest []
+
+parseTerms :: State -> String -> [Term] -> [Term]
+parseTerms Q0 (p:ps)   ts | isLower p = parseTerms Q1 rest (ts ++ [Const name])
+                          | isUpper p = parseTerms Q1 rest (ts ++ [Var   name])
+    where
+        (name, rest) = parseName [] (p:ps)
+parseTerms Q1 (p:ps)   ts | p == ','  = parseTerms Q0 ps ts
+                          | p == ')'  = ts
+parseTerms s  (' ':ps) ts             = parseTerms s ps ts
+parseTerms _  (p:ps)   _              = error ("Parse error on token " ++ [p])
+parseTerms _  _        _              = error "Parse error"
 
 
+parseName :: String -> String -> (String, String)
+parseName rs (s:ss) | isLetter s = parseName (rs ++ [s]) ss
+                    | otherwise  = (rs, (s:ss))
+                    
+                    
+                    
+                    
 -- =========== Test Program ===========
-
