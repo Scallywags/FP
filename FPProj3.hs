@@ -6,6 +6,22 @@ import Data.List
 import Data.Maybe
 import Data.Char
 
+{- ===============================================================
+
+                         README
+                            
+      To evaluate an expression you are given two options:
+         
+      1. Call evalMulti (yourProgram) (yourQuery)
+         Example:    evalMulti program [Atom "p", (Var "X")]
+            
+      2. Call parse (yourQueryAsAStringInPrologNotation)
+         Example:    parse "r(X)"    (See parser for more info)
+
+================================================================-}
+
+
+
 -- =========== Types ===========
 
 type Predicate = String
@@ -25,35 +41,7 @@ type Substitution   = [(Term, Term)]
 
 type Solution       = (Bool, [Substitution])
 
-val :: Term -> String
-val (Var x)   = x
-val (Const x) = x
 
-value :: Atom -> [String]
-value (Atom _ terms) = [val t | t <- terms]
-
-predicate :: Atom -> Predicate
-predicate (Atom p _)    = p
-
--- =========== Unify ===========
-
-unify :: Atom -> Atom -> Maybe Substitution
-unify a1 a2     = unify' [] a1 a2
-
-unify' :: Substitution -> Atom -> Atom -> Maybe Substitution
-unify' subs     (Atom p1 (t1@(Var x):terms1))   (Atom p2 (t2:terms2))           | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
-    where
-        sub = (t1, t2)
-        newTerms1 = map (<=~ [sub]) terms1
-        newTerms2 = map (<=~ [sub]) terms2
-unify' subs     (Atom p1 (t1@(Const x):terms1)) (Atom p2 (t2@(Var y):terms2))   | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
-    where
-        sub = (t2, t1)
-        newTerms1 = map (<=~ [sub]) terms1
-        newTerms2 = map (<=~ [sub]) terms2
-unify' subs     (Atom p1 ((Const x):terms1))    (Atom p2 ((Const y):terms2))    | p1 == p2 && x == y    = unify' subs (Atom p1 terms1)  (Atom p2 terms2)
-unify' subs     (Atom p1 [])                    (Atom p2 [])                    | p1 == p2              = Just subs
-unify' _        _                               _                               = Nothing
 
 -- =========== Expression type class ===========
 
@@ -76,6 +64,43 @@ instance Expr Clause where
 instance Expr Program where
     prog            <=~     subs     = map (<=~ subs) prog
 
+    
+-- =========== Helper functions ==========
+
+val :: Term -> String
+val (Var x)   = x
+val (Const x) = x
+
+value :: Atom -> [String]
+value (Atom _ terms) = [val t | t <- terms]
+
+predicate :: Atom -> Predicate
+predicate (Atom p _)    = p
+
+
+
+-- =========== Unify ===========
+
+unify :: Atom -> Atom -> Maybe Substitution
+unify a1 a2     = unify' [] a1 a2
+
+unify' :: Substitution -> Atom -> Atom -> Maybe Substitution
+unify' subs     (Atom p1 (t1@(Var x):terms1))   (Atom p2 (t2:terms2))           | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
+    where
+        sub = (t1, t2)
+        newTerms1 = map (<=~ [sub]) terms1
+        newTerms2 = map (<=~ [sub]) terms2
+unify' subs     (Atom p1 (t1@(Const x):terms1)) (Atom p2 (t2@(Var y):terms2))   | p1 == p2              = unify' (sub:subs) (Atom p1 newTerms1) (Atom p2 newTerms2)
+    where
+        sub = (t2, t1)
+        newTerms1 = map (<=~ [sub]) terms1
+        newTerms2 = map (<=~ [sub]) terms2
+unify' subs     (Atom p1 ((Const x):terms1))    (Atom p2 ((Const y):terms2))    | p1 == p2 && x == y    = unify' subs (Atom p1 terms1)  (Atom p2 terms2)
+unify' subs     (Atom p1 [])                    (Atom p2 [])                    | p1 == p2              = Just subs
+unify' _        _                               _                               = Nothing
+
+
+
 -- =========== Rename ===========
 
 rename :: Query -> Clause -> Clause
@@ -93,6 +118,8 @@ names :: [String]
 names = concat $ iterate (zipWith (++) aTOz) aTOz
     where aTOz = map (:[]) ['A'..'Z']
 
+    
+    
 -- =========== Evaluate ===========
 
 evalMulti :: Program -> Query -> Solution
@@ -119,71 +146,19 @@ findSubs pro q@(Atom p ((Var x):ts))     prog@(c@(a, as):cs)    = Just (sub ++ f
             Just subs   -> subs
             Nothing     -> []
 
-{-
-getMatches :: Atom -> Program -> [[Clause]]
-getMatches (Atom _ [])                     _    = []
-getMatches q@(Atom qp qts@((Const x):ts))  cs   = getMatches (Atom qp ts) cs
-getMatches q@(Atom qp qts@((Var x):ts))    cs   = matches : getMatches (Atom qp ts) cs
-    where
-        matches = [c | c@(a@(Atom cp cts), _) <- cs, qp == cp, length cts == length qts, unify q a /= Nothing]
--}
-
--- =========== Example Program ===========
-
-program :: Program
-program     =   [(Atom "mother" [Const "emma", Const "wilhelmina"], [])
-                ,(Atom "mother" [Const "wilhelmina", Const "juliana"], [])
-                ,(Atom "mother" [Const "juliana", Const "beatrix"], [])
-                ,(Atom "mother" [Const "juliana", Const "margriet"], [])
-                ,(Atom "mother" [Const "juliana", Const "irene"], [])
-                ,(Atom "mother" [Const "juliana", Const "christina"], [])
-                ,(Atom "mother" [Const "margriet", Const "maurits"], [])
-                ,(Atom "mother" [Const "margriet", Const "bernhard_jr"], [])
-                ,(Atom "mother" [Const "margriet", Const "pieter_christiaan"], [])
-                ,(Atom "mother" [Const "margriet", Const "floris"], [])
-                ,(Atom "mother" [Const "beatrix", Const "alexander"], [])
-                ,(Atom "mother" [Const "beatrix", Const "friso"], [])
-                ,(Atom "mother" [Const "beatrix", Const "constantijn"], [])
-                ,(Atom "mother" [Const "maxima", Const "amalia"], [])
-                ,(Atom "mother" [Const "maxima", Const "alexia"], [])
-                ,(Atom "mother" [Const "maxima", Const "ariane"], [])
-
-                ,(Atom "husband" [Const "bernhard", Const "juliana"], [])
-                ,(Atom "husband" [Const "claus", Const "beatrix"], [])
-                ,(Atom "husband" [Const "pieter", Const "margriet"], [])
-                ,(Atom "husband" [Const "alexander", Const "maxima"], [])
-                ,(Atom "husband" [Const "friso", Const "mabel"], [])
-                ,(Atom "husband" [Const "constantijn", Const "laurentien"], [])
-
-                ,(Atom "female" [Const "irene"], [])
-                ,(Atom "female" [Const "christina"], [])
-                ,(Atom "female" [Const "amalia"], [])
-                ,(Atom "female" [Const "alexia"], [])
-                ,(Atom "female" [Const "ariane"], [])
-                ,(Atom "female" [Var "X"], [Atom "mother" [Var "X", Var "_"]])
-                ,(Atom "female" [Var "X"], [Atom "husband" [Var "_", Var "X"]])
-
-                ,(Atom "male" [Const "maurits"], [])
-                ,(Atom "male" [Const "bernhard_jr"], [])
-                ,(Atom "male" [Const "pieter_christiaan"], [])
-                ,(Atom "male" [Const "floris"], [])
-                ,(Atom "male" [Var "X"], [Atom "husband" [Var "X", Var "_"]])
-                ]
             
+         
 -- ============= Parser =============
 
 data State = Q0 | Q1
 
-{-- TODO this will not work until evalMulti works. In the meantime we can use the function below.
-
-parse :: String -> Solution
-parse (p:ps) = evalMulti program [Atom name terms]
-    where
-        (name, '(':rest) = parseName [] (p:ps)
-        terms            = parseTerms Q0 rest []
-parse _      = error "Parse error in parse"
---}
-
+-- This parser accepts string in prolog notation up to a certain degree.
+-- predicates and terms can be words
+-- Constants start with a lowercase letter
+-- Variables start with an uppercase letter or an underscore (_)
+-- Example: r(X, Y)
+--          mother(tess, _)
+--          functionWithLotsOfVariablesAndConstants(VarA, VarB, VarC, VarD, constA, constB, VarE, constC)
 parse :: String -> Atom
 parse ps = Atom name terms
     where
@@ -286,8 +261,8 @@ smallStatements = [("p(a)", [])
                   ,("s(X)", ["p(X)", "q(X)"])
                   ]
                     
-program2 :: Program
-program2 = map parseClause statements
+program :: Program
+program = map parseClause statements
 
 familyProgram :: Program
 familyProgram = map parseClause familyStatements
@@ -298,6 +273,7 @@ smallProgram = map parseClause smallStatements
 
 
 -- ============= Tests =============
+
 familyQueries :: [Query]
 familyQueries = [ [parse "mother(maxima, ariane)"]
                 , [parse "mother(X, floris)"]
@@ -309,15 +285,6 @@ familyQueries = [ [parse "mother(maxima, ariane)"]
                 , [parse "husband(X, Y)"]
                 , [parse "male(alexander)"]
                 ]
-                
-falseFamilyQueries = [ [parse "female(alexander)"]
-                     , [parse "mother(maxima, maurits)"]
-                     , [parse "mother(X, laurentien)"]
-                     , [parse "female(argOne, argTwo)"]
-                     , [parse "mother(argOne)"]
-                     ]
 
 familyTest :: Bool
-familyTest = (and $ map (fst) $ map (evalMulti familyProgram) familyQueries)            -- All statements are true
-             &&
-             (not $ or $ map (fst) $ map (evalMulti familyProgram) falseFamilyQueries)  -- All statements are false
+familyTest = (and $ map (fst) $ map (evalMulti familyProgram) familyQueries)
